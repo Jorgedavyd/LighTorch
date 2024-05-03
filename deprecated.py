@@ -1,4 +1,3 @@
-from utils import get_default_device
 from torch.utils.tensorboard import SummaryWriter
 from typing import List, Dict, Any, Iterable, Union
 from collections import defaultdict
@@ -10,13 +9,13 @@ from tqdm import tqdm
 import numpy as np
 import matplotlib.pyplot as plt
 
-# REASON: Optimization low performance with other libraries
+# REASON: Optimization low performance with other libraries (lightning)
 
 def create_config(name_run: str):
     os.makedirs(f"./{name_run}/models", exist_ok=True)
     return {
         "name": name_run,
-        "device": get_default_device(),
+        "device": 'cuda' if torch.cuda.is_available() else 'cpu',
         "epoch": 0,
         "global_step_train": 0,
         "global_step_val": 0,

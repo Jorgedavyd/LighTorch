@@ -1,10 +1,10 @@
 [![license](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![code-style](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-# Joint Torch Framework
-Leveraging various frameworks methods for generalized training.
-
-## Example
+# More modules
+Set useful architectures for several tasks.
+- Fourier Convolution
+- Partial Convolutino (optimized implementation)
 
 ## Contact  
 
