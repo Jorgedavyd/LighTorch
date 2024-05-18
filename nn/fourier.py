@@ -21,20 +21,27 @@ class _FourierConvNd(nn.Module):
             'device': device,
             'dtype': dtype
         }
+
         if pre_fft:
             self.fft = fftn
 
         if post_ifft:
             self.ifft = ifftn
 
-        self.weight = nn.Parameter(torch.empty(*kernel_size, **self.factory_kwargs) + 1j * torch.empty(*kernel_size, **self.factory_kwargs))
+        self.weight = nn.Parameter(torch.empty(*kernel_size, **self.factory_kwargs))
         
         if bias:
-            self.bias = nn.Parameter(torch.empty(kernel_size[0], **self.factory_kwargs) + 1j * torch.empty(kernel_size[0], **self.factory_kwargs))
+            self.bias = nn.Parameter(torch.empty(kernel_size[0], **self.factory_kwargs))
         else:
             self.bias = None
 
         self._init_parameters()
+        self._fourier_space(len(kernel_size))
+        
+    def _fourier_space(self, dims: int) -> Tensor:
+        if self.bias is not None:
+            self.bias = self.fft(self.bias, dim = (-i for i in range(1, dims)))
+        self.weight = self.fft(self.weight, dim = (-i for i in range(1, dims)))
     
     def _init_parameters(self) -> None:
         init.kaiming_uniform_(self.weight, a = sqrt(5))
@@ -71,7 +78,6 @@ class FourierConv2d(_FourierConvNd):
             out = self.ifft(out, dim = (-2, -1))
         return out
     
-
 
 class FourierConv3d(_FourierConvNd):
     def __init__(self, *args, **kwargs) -> None:
