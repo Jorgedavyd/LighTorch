@@ -11,17 +11,19 @@ import matplotlib.pyplot as plt
 
 # REASON: Optimization low performance with other libraries (lightning)
 
+
 def create_config(name_run: str):
     os.makedirs(f"./{name_run}/models", exist_ok=True)
     return {
         "name": name_run,
-        "device": 'cuda' if torch.cuda.is_available() else 'cpu',
+        "device": "cuda" if torch.cuda.is_available() else "cpu",
         "epoch": 0,
         "global_step_train": 0,
         "global_step_val": 0,
         "optimizer_state_dict": None,
         "scheduler_state_dict": None,
     }
+
 
 def get_lr(optimizer):
     for param_group in optimizer.param_groups:

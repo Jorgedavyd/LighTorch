@@ -3,8 +3,23 @@
 
 # More modules
 Set useful architectures for several tasks.
-- Fourier Convolution
-- Partial Convolutino (optimized implementation)
+- Fourier Convolution.
+- Partial Convolution. (Optimized implementation)
+- Grouped Query Attention, Multi Query Attention, Multi Head Attention. (Interpretative usage)
+- Normalization methods.
+- Positional encoding methods.
+- Embedding methods.
+- Useful criterions.
+- Useful utilities.
+- Built-in Default Feed Forward Networks.
+- Adaptation for $\mathbb{C}$ modules.
+
+# Features
+- Built in Module class for:
+    - Adversarial training.
+    - Supervised, Self-supervised training.
+- Multi-Objective optimization and Hyperparameter tuning with optuna.
+- Built-in default architectures: transformer, vae, $\beta$-vae, conditional vae, autoencoders for direct training on given data.
 
 ## Contact  
 
