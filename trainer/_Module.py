@@ -42,6 +42,8 @@ def interval(algo: LRScheduler) -> str:
 class Module(LightningModule):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
+        for att in kwargs:
+            setattr(self, att, kwargs[att])
         # Setting up the gradient clipping
         self.trainer.gradient_clip_algorithm = self.gradient_clip_algorithm
         self.trainer.gradient_clip_val = self.gradient_clip_val

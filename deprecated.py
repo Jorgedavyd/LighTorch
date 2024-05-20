@@ -9,7 +9,7 @@ from tqdm import tqdm
 import numpy as np
 import matplotlib.pyplot as plt
 
-# REASON: Optimization low performance with other libraries (lightning)
+# REASON: Optimization performance against other libraries (lightning)
 
 
 def create_config(name_run: str):
@@ -412,45 +412,5 @@ class TrainingPhase(nn.Module):
             # Save model and config if epoch mod(saving_div) = 0
             if epoch % saving_div == 0:
                 self.save_config()
-            # Show sample of data
-            self.imshow(val_loader)
             # End of epoch
             self.end_of_epoch()
-
-    def imshow(self, loader):
-        for batch in loader:
-            I_gt, M_l_1 = batch
-
-            I_gt = I_gt[0, :, :, :]
-            M_l_1 = M_l_1[0, :, :, :]
-
-            I_out, M_l_2 = self(I_gt.unsqueeze(0), M_l_1.unsqueeze(0))
-
-            I_out = I_out[0, :, :, :]
-            M_l_2 = M_l_2[0, :, :, :]
-
-            I_out: np.array = I_out.view(1024, 1024).detach().cpu().numpy()
-            I_gt: np.array = I_gt.view(1024, 1024).detach().cpu().numpy()
-
-            mathcal_M = (
-                (M_l_1.bool() ^ M_l_2.bool()).cpu().detach().view(1024, 1024).numpy()
-            )
-
-            M_l_2 = M_l_2.cpu().detach().view(1024, 1024).numpy()
-
-            diff = I_out * mathcal_M
-
-            # Make plot
-            fig, axes = plt.subplots(1, 3)
-            axes[0].imshow(I_gt)
-            axes[1].imshow(I_out)
-            axes[2].imshow(diff)
-
-            for ax in axes:
-                ax.set_xticks([])
-                ax.set_yticks([])
-
-            plt.show()
-
-            fig.savefig(f'{self.name_run}/images/{self.config["epoch"]}.png')
-            break
