@@ -46,6 +46,9 @@ class ELBO(_Base):
 
 # pnsr
 
+# Total variance
+
+
 
 # lambda
 class LagrangianFunctional(_Base):

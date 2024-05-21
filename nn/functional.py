@@ -5,11 +5,10 @@ import torch.nn.functional as F
 
 
 def fourierconvNd(x: Tensor, weight: Tensor, bias: Optional[Tensor] = None):
-    out = (x.real * weight.real) + 1j * (x.imag * weight.imag)
+    out = x * weight
     if bias is not None:
-        out += bias
+        return out + bias
     return out
-
 
 def partialconv3d(
     input: Tensor,
@@ -42,7 +41,6 @@ def partialconv3d(
 
     return (out, updated_mask) if update_mask else out
 
-
 def partialconv2d(
     input: Tensor,
     mask_in: Tensor,
@@ -70,7 +68,6 @@ def partialconv2d(
     out = out * (one / sum) + bias
 
     return (out, updated_mask) if update_mask else out
-
 
 def partialconv1d(
     input: Tensor,
@@ -103,6 +100,7 @@ def partialconv1d(
 
     return (out, updated_mask) if update_mask else out
 
-
-def res_connection(x: Tensor, sublayer: Callable[[Tensor], Tensor]) -> Tensor:
+def res_connection(x: Tensor, sublayer: Callable[[Tensor], Tensor], to_dim_layer = None) -> Tensor:
+    if to_dim_layer is not None:
+        return to_dim_layer(x) + sublayer(x)
     return x + sublayer(x)

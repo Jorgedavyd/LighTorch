@@ -21,11 +21,11 @@ class _FourierConvNd(nn.Module):
         self.factory_kwargs = {"device": device, "dtype": dtype}
 
         if pre_fft:
-            self.fft = fftn
+            self.fft = lambda x: fftn(x, dim = (-i for i in range(1, len(kernel_size))))
         else:
             self.fft = False
         if post_ifft:
-            self.ifft = ifftn
+            self.ifft = lambda x: ifftn(x, dim = (-i for i in range(1, len(kernel_size))))
         else:
             self.ifft = False
 
@@ -53,7 +53,12 @@ class _FourierConvNd(nn.Module):
                 init.uniform_(self.bias, -bound, bound)
 
     def forward(self, input: Tensor) -> Tensor:
-        return F.fourierconvNd(input, self.weight, self.bias)
+        if self.fft:
+            input = self.fft(input)
+        out = F.fourierconvNd(input, self.weight, self.bias)
+        if self.ifft:
+            return self.ifft(out)
+        return out
 
 
 class FourierConv1d(_FourierConvNd):
@@ -61,12 +66,7 @@ class FourierConv1d(_FourierConvNd):
         super().__init__(*args, **kwargs)
 
     def forward(self, input: Tensor) -> Tensor:
-        if self.fft:
-            input = self.fft(input, dim=-1)
-        out = super(FourierConv1d, self).forward(input)
-        if self.ifft:
-            out = self.ifft(out, dim=-1)
-        return out
+        return super().forward(input)
 
 
 class FourierConv2d(_FourierConvNd):
@@ -74,12 +74,7 @@ class FourierConv2d(_FourierConvNd):
         super().__init__(*args, **kwargs)
 
     def forward(self, input: Tensor) -> Tensor:
-        if self.fft:
-            input = self.fft(input, dim=(-2, -1))
-        out = super(FourierConv1d, self).forward(input)
-        if self.ifft:
-            out = self.ifft(out, dim=(-2, -1))
-        return out
+        return super().forward(input)
 
 
 class FourierConv3d(_FourierConvNd):
@@ -87,12 +82,7 @@ class FourierConv3d(_FourierConvNd):
         super().__init__(*args, **kwargs)
 
     def forward(self, input: Tensor) -> Tensor:
-        if self.fft:
-            input = self.fft(input, dim=(-3, -2, -1))
-        out = super(FourierConv1d, self).forward(input)
-        if self.ifft:
-            out = self.ifft(out, dim=(-3, -2, -1))
-        return out
+        return super().forward(input)
 
 
 __all__ = ["FourierConv1d", "FourierConv2d", "FourierConv3d"]

@@ -1,7 +1,7 @@
 # Include the DeepNeuralNetwork
 # Base Deep Neural Network
 from torch import Tensor, nn
-from typing import Tuple, Sequence
+from typing import Sequence
 
 def  _SingularLayer(in_features: int, out_features: int, activation: nn.Module) -> Tensor:
     out = nn.Sequential(
