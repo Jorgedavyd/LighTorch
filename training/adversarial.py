@@ -13,6 +13,7 @@ from torch.optim.lr_scheduler import (
     ExponentialLR,
     LinearLR,
 )
+import torchvision
 
 VALID_OPTIMIZERS = {
     "adam": Adam,

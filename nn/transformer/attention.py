@@ -16,12 +16,27 @@ You can use it with:
 """
 
 class _AttentionBase(nn.Module):
-    def __init__(self, seq: bool = False, scale_factor: float = 1) -> None:
+    def __init__(self, seq: bool = False, scale_factor: float = 1, flash: bool = True) -> None:
         super().__init__()
         self.seq = seq
         self.scale_factor = scale_factor
-
+        self.flash = flash
     def normal_attention(self, q: Tensor, k: Tensor, v: Tensor, mask: Tensor = None) -> Tensor:
+        if self.flash:
+            with torch.backends.cuda.sdp_kernel(
+                enable_flash=True, 
+                enable_math=False, 
+                enable_mem_efficient=False
+            ):
+                out = F.scaled_dot_product_attention(
+                    q,
+                    k,
+                    v,
+                    mask,
+                    scale = self.scale_factor
+                )
+            return out
+        
         energy = (q@k.transpose(-1,-2))
 
         if mask is not None:
@@ -32,6 +47,21 @@ class _AttentionBase(nn.Module):
         return F.softmax(energy)@v
     
     def seq_attention(self, q: Tensor, k: Tensor, v: Tensor, mask: Tensor = None) -> Tensor:
+        if self.flash:
+            with torch.backends.cuda.sdp_kernel(
+                enable_flash=True, 
+                enable_math=False, 
+                enable_mem_efficient=False
+            ):
+                out = F.scaled_dot_product_attention(
+                    q.transpose(-1, -2),
+                    k.transpose(-1, -2),
+                    v.transpose(-1, -2),
+                    mask.transpose(-1, -2),
+                    scale = self.scale_factor
+                )
+            return out
+        
         energy = (q.transpose(-1,-2)@k)
 
         if mask is not None:

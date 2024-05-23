@@ -3,7 +3,7 @@ from lightning.pytorch import LightningModule
 from torch import nn, Tensor
 from typing import Tuple, Sequence
 from criterions import _Loss
-from trainer.supervised import Module
+from training.supervised import Module
 from dataclasses import dataclass
 """
 VAE
