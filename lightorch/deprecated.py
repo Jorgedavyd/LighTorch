@@ -6,8 +6,6 @@ import os
 from torch import Tensor, nn
 from copy import deepcopy
 from tqdm import tqdm
-import numpy as np
-import matplotlib.pyplot as plt
 
 # REASON: Optimization performance against other libraries (lightning)
 
