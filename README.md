@@ -1,7 +1,16 @@
 [![license](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![code-style](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![pypi](https://img.shields.io/pypi/v/lightorch)](https://pypi.org/project/lightorch)
 
-# More modules
+# LighTorch
+
+<p align="center">
+  <img src="https://github.com/Jorgedavyd/torch-framework/raw/docs/source/logo.png" height = 200 width = 200 />
+</p>
+
+A Pytorch and Lightning based framework for research and ml pipeline automation.
+
+# Modules
 Set useful architectures for several tasks.
 - Fourier Convolution.
 - Partial Convolution. (Optimized implementation)
@@ -19,7 +28,7 @@ Set useful architectures for several tasks.
     - Adversarial training.
     - Supervised, Self-supervised training.
 - Multi-Objective optimization and Hyperparameter tuning with optuna.
-- Built-in default architectures: transformer, vae, $\beta$-vae, conditional vae, autoencoders for direct training on given data.
+- Built-in default architectures: Transformers, VAEs, autoencoders for direct training on given data.
 
 ## Contact  
 

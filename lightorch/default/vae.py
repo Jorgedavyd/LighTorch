@@ -1,9 +1,8 @@
 import torch
-from lightning.pytorch import LightningModule
 from torch import nn, Tensor
 from typing import Tuple, Sequence
-from criterions import _Loss
-from training.supervised import Module
+from ..nn.criterions import _Loss
+from ..training import Module
 from dataclasses import dataclass
 """
 VAE

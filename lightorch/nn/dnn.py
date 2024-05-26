@@ -1,4 +1,3 @@
-# Include the DeepNeuralNetwork
 # Base Deep Neural Network
 from torch import Tensor, nn
 from typing import Sequence

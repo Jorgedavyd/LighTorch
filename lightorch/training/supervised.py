@@ -1,19 +1,18 @@
-from lightning.pytorch import Trainer, LightningModule
-from typing import Union, Iterable, Sequence, Any, Tuple, Dict, Mapping
+from lightning.pytorch import LightningModule
+from typing import Union, Sequence, Any, Tuple, Dict
 from torch import Tensor, nn
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 from collections import defaultdict
 import torch
 from torch.optim import Adam, Adadelta, Adamax, AdamW, SGD, LBFGS, RMSprop
-from .supervised import Module as Module_
+
 from torch.optim.lr_scheduler import (
     OneCycleLR,
     ReduceLROnPlateau,
     ExponentialLR,
     LinearLR,
 )
-import torchvision
 
 VALID_OPTIMIZERS = {
     "adam": Adam,
@@ -39,54 +38,34 @@ def interval(algo: LRScheduler) -> str:
     else:
         return "epoch"
 
-class Module(Module_):
+class Module(LightningModule):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        self.automatic_optimization = False
-    def validation_step(self) -> None:
-        grid = torchvision.utils.make_grid(self.sample_imgs[:6])
-        self.logger.experiment.add_image('Generator output', grid, 0)
-        return super().on_train_epoch_end()
+        for att in kwargs:
+            setattr(self, att, kwargs[att])
+        # Setting up the gradient clipping
+        self.trainer.gradient_clip_algorithm = self.gradient_clip_algorithm
+        self.trainer.gradient_clip_val = self.gradient_clip_val
+
     def training_step(self, batch: Tensor, idx: int) -> Tensor:
-        imgs = batch
-        # Getting the optimizers
-        opt_d, opt_g = self.optimizers()
-        # To the latent space
-        z = torch.randn(imgs.shape[0], self.hparams.latent_dim)
-        z = z.type_as(imgs)
-        self.toggle_optimizer(opt_g)
-        # Targets for discriminator
-        valid = torch.ones(imgs.size(0), 1)
-        valid = valid.type_as(imgs)
-        # Making the step that minimizes the amount of fake predictions
-        g_loss = self.criterion(self.discriminator(self(z)), valid)        
-        self.log("Generator Loss", g_loss, prog_bar=True)
-        self.manual_backward(g_loss)
-        opt_g.step()
-        opt_g.zero_grad()
-        self.untoggle_optimizer(opt_g)
-
-        self.toggle_optimizer(opt_d)
-
-        # Real samples
-        valid = torch.ones(imgs.size(0), 1)
-        valid = valid.type_as(imgs)
-
-        real_loss = self.adversarial_loss(self.discriminator(imgs), valid)
-
-        # Fake samples
-        fake = torch.zeros(imgs.size(0), 1)
-        fake = fake.type_as(imgs)
-
-        fake_loss = self.adversarial_loss(self.discriminator(self(z).detach()), fake)
+        args = self.loss_forward(batch, idx)
+        return self._compute_training_loss(*args)
     
-        # Mean of both
-        d_loss = (real_loss + fake_loss) / 2
-        self.log("d_loss", d_loss, prog_bar=True)
-        self.manual_backward(d_loss)
-        opt_d.step()
-        opt_d.zero_grad()
-        self.untoggle_optimizer(opt_d)
+    @torch.no_grad()
+    def validation_step(self, batch: Tensor, idx: int) -> None:
+        args = self.loss_forward(batch, idx)
+        return self._compute_valid_metrics(*args)
+    
+    def _compute_training_loss(self, *args) -> Tensor | Sequence[Tensor]:
+        args = self.criterion(*args)
+        self.log_dict({f"Training/{k}": v for k, v in zip(self.criterion.labels, args)}, True, True, True, True)
+        self.log("hp_metric", sum(args[:-1]), True, True, True, True)
+        return args[-1]
+    
+    @torch.no_grad()
+    def _compute_valid_metrics(self, *args) -> None:
+        args = self.criterion.val_step(*args)
+        self.log_dict({f"Validation/{k}": v for k, v in zip(self.criterion.val_labels, args)}, True, True, True, True)
 
     def get_param_groups(self, *triggers) -> Tuple:
         """
@@ -103,6 +82,21 @@ class Module(Module_):
                     param_group["params"].append(param)
 
         return param_groups
+
+    def get_hparams(self) -> Sequence[Dict[str, float]]:
+        return (
+            [
+                {"lr": lr, "weight_decay": wd, "momentum": mom}
+                for lr, wd, mom in zip(
+                    self.learning_rate, self.weight_decay, self.momentum
+                )
+            ]
+            if getattr(self, "momentum", False)
+            else [
+                {"lr": lr, "weight_decay": mom}
+                for lr, mom in zip(self.learning_rate, self.weight_decay)
+            ]
+        )
 
     def _configure_optimizer(self) -> Optimizer:
         optimizer_args: Dict[str, Union[float, nn.Module]] = []
