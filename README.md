@@ -5,7 +5,7 @@
 # LighTorch
 
 <p align="center">
-  <img src="https://github.com/Jorgedavyd/torch-framework/raw/docs/source/logo.png" height = 350 width = 350 />
+  <img src="https://raw.githubusercontent.com/Jorgedavyd/LighTorch/main/docs/source/logo.png" height = 350 width = 350 />
 </p>
 
 A Pytorch and Lightning based framework for research and ml pipeline automation.
