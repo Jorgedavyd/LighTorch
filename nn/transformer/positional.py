@@ -9,6 +9,8 @@ Positional encodings:
 import torch
 from torch import nn, Tensor
 from datetime import timedelta
+import math
+
 """
 Rotary Positional Encoder [source](https://arxiv.org/pdf/2104.09864.pdf)
 
@@ -87,3 +89,21 @@ class DnPositionalEncoding(nn.Module):
             out += x_n
         return out
 
+class AbsoluteSinusoidalPositionalEncoding(nn.Module):
+    def __init__(
+            self,
+            dropout
+    ):
+        super(AbsoluteSinusoidalPositionalEncoding, self).__init__()
+        self.dropout = nn.Dropout(dropout)
+    def forward(self, x):
+        batch_size, seq_len, embed_dim = x.size()
+        #create positional encoding
+        pos_embedding = torch.empty(seq_len, embed_dim)
+        #change the pos_embedding to fit the functions
+        for i in range(seq_len):
+            for j in range(embed_dim//2):
+                pos_embedding[i,2*j] = math.sin(i/pow(10000, (2*j)/embed_dim))
+                pos_embedding[i,2*j + 1] = math.cos(i/pow(10000, (2*j)/embed_dim))
+        x += pos_embedding.unsqueeze(0)
+        return self.dropout(x)
