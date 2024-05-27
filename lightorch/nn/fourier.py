@@ -1,18 +1,23 @@
 from torch import nn, Tensor
-import functional as F
+from . import functional as F
 from torch.fft import fftn, ifftn
 import torch
 from torch.nn import init
 from math import sqrt
 import torch.nn.functional as f
 
+
 class IdentityConvolution(nn.Module):
     def __init__(self, in_channels: int, out_channels: int) -> None:
         super().__init__()
         self.weight = torch.ones(out_channels, in_channels, 1, 1, requires_grad=False)
+
     @torch.no_grad()
     def forward(self, input: Tensor) -> Tensor:
-        return f.conv2d(input.real, self.weight) + 1j*f.conv2d(input.imag, self.weight)
+        return f.conv2d(input.real, self.weight) + 1j * f.conv2d(
+            input.imag, self.weight
+        )
+
 
 class _FourierConvNd(nn.Module):
     def __init__(
@@ -35,11 +40,11 @@ class _FourierConvNd(nn.Module):
         self.factory_kwargs = {"device": device, "dtype": dtype}
 
         if pre_fft:
-            self.fft = lambda x: fftn(x, dim = (-i for i in range(1, len(kernel_size))))
+            self.fft = lambda x: fftn(x, dim=(-i for i in range(1, len(kernel_size))))
         else:
             self.fft = False
         if post_ifft:
-            self.ifft = lambda x: ifftn(x, dim = (-i for i in range(1, len(kernel_size))))
+            self.ifft = lambda x: ifftn(x, dim=(-i for i in range(1, len(kernel_size))))
         else:
             self.ifft = False
 
@@ -74,10 +79,30 @@ class _FourierConvNd(nn.Module):
             return self.ifft(out)
         return out
 
+
 class _FourierDeconvNd(_FourierConvNd):
-    def __init__(self, in_channels: int, out_channels: int, *kernel_size, bias: bool = True, pre_fft: bool = True, post_ifft: bool = False, device=None, dtype=None) -> None:
-        super().__init__(in_channels, out_channels, *kernel_size, bias=bias, pre_fft=pre_fft, post_ifft=post_ifft, device=device, dtype=dtype)
-    
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        *kernel_size,
+        bias: bool = True,
+        pre_fft: bool = True,
+        post_ifft: bool = False,
+        device=None,
+        dtype=None,
+    ) -> None:
+        super().__init__(
+            in_channels,
+            out_channels,
+            *kernel_size,
+            bias=bias,
+            pre_fft=pre_fft,
+            post_ifft=post_ifft,
+            device=device,
+            dtype=dtype,
+        )
+
     def forward(self, input: Tensor) -> Tensor:
         if self.fft:
             input = self.fft(input)
@@ -110,6 +135,7 @@ class FourierConv3d(_FourierConvNd):
     def forward(self, input: Tensor) -> Tensor:
         return super().forward(input)
 
+
 class FourierDeconv1d(_FourierDeconvNd):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -134,9 +160,11 @@ class FourierDeconv3d(_FourierDeconvNd):
         return super().forward(input)
 
 
-__all__ = ["FourierConv1d", 
-           "FourierConv2d", 
-           "FourierConv3d",
-           "FourierDeconv1d",
-           "FourierDeconv2d",
-           "FourierDeconv3d"]
+__all__ = [
+    "FourierConv1d",
+    "FourierConv2d",
+    "FourierConv3d",
+    "FourierDeconv1d",
+    "FourierDeconv2d",
+    "FourierDeconv3d",
+]

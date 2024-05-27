@@ -38,14 +38,17 @@ def interval(algo: LRScheduler) -> str:
     else:
         return "epoch"
 
+
 class Module(Module_):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.automatic_optimization = False
+
     def validation_step(self) -> None:
         grid = torchvision.utils.make_grid(self.sample_imgs[:6])
-        self.logger.experiment.add_image('Generator output', grid, 0)
+        self.logger.experiment.add_image("Generator output", grid, 0)
         return super().on_train_epoch_end()
+
     def training_step(self, batch: Tensor, idx: int) -> Tensor:
         imgs = batch
         # Getting the optimizers
@@ -58,7 +61,7 @@ class Module(Module_):
         valid = torch.ones(imgs.size(0), 1)
         valid = valid.type_as(imgs)
         # Making the step that minimizes the amount of fake predictions
-        g_loss = self.criterion(self.discriminator(self(z)), valid)        
+        g_loss = self.criterion(self.discriminator(self(z)), valid)
         self.log("Generator Loss", g_loss, prog_bar=True)
         self.manual_backward(g_loss)
         opt_g.step()
@@ -78,7 +81,7 @@ class Module(Module_):
         fake = fake.type_as(imgs)
 
         fake_loss = self.adversarial_loss(self.discriminator(self(z).detach()), fake)
-    
+
         # Mean of both
         d_loss = (real_loss + fake_loss) / 2
         self.log("d_loss", d_loss, prog_bar=True)
@@ -136,4 +139,4 @@ class Module(Module_):
         }
 
 
-__all__ = ['Module']
+__all__ = ["Module"]

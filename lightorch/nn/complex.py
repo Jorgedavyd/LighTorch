@@ -6,6 +6,7 @@ class Complex(nn.Module):
     # Complex
     Module to transform non-complex operators.
     """
+
     def __init__(self, module: nn.Module, *args, **kwargs) -> None:
         super().__init__()
         self.Re_mod = module(*args, **kwargs)

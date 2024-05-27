@@ -1,7 +1,8 @@
 from torch import nn, Tensor
 from typing import Sequence, Dict, Tuple, Optional, Callable, Sequence, List
 import torch
-import functional as F
+from . import functional as F
+
 
 class _Base(nn.Module):
     def __init__(
@@ -12,7 +13,7 @@ class _Base(nn.Module):
         super().__init__()
         self.labels = labels.append("Overall")
         self.factors = factors
-    
+
 
 class ELBO(_Base):
     """
@@ -23,7 +24,7 @@ class ELBO(_Base):
 
     def __init__(self, beta: float, reconstruction_criterion: nn.Module) -> None:
         super().__init__(
-            ['KL Divergence'] + reconstruction_criterion.labels,
+            ["KL Divergence"] + reconstruction_criterion.labels,
             {"KL Divergence": beta}.update(reconstruction_criterion.factors),
         )
 
@@ -38,16 +39,12 @@ class ELBO(_Base):
         return (L_recons, L_kl, L_recons + self.beta * L_kl)
 
 
-
 # Gram matrix based loss
 class StyleLoss(_Base):
     def __init__(self, feature_extractor) -> None:
-        super().__init__(
-            labels = 'Style Loss',
-            factors = None
-        )
+        super().__init__(labels="Style Loss", factors=None)
         self.feature_extractor = feature_extractor
-        
+
         sample_tensor: Tensor = torch.randn(32, 1, 1024, 1024)
         F_p: List[int] = []
 
@@ -58,14 +55,20 @@ class StyleLoss(_Base):
         self.F_p: Tensor = Tensor(F_p)
 
     def forward(self, input: Tensor, target: Tensor, feature_extractor: bool = True):
-        return F.style_loss(input, target, self.F_p, self.feature_extractor if feature_extractor else None)
+        return F.style_loss(
+            input,
+            target,
+            self.F_p,
+            self.feature_extractor if feature_extractor else None,
+        )
+
 
 # Perceptual loss for style features
 class PerceptualLoss(nn.Module):
     def __init__(self, feature_extractor) -> None:
         super().__init__()
         self.feature_extractor = feature_extractor
-        
+
         sample_tensor: Tensor = torch.randn(32, 1, 1024, 1024)
         N_phi_p: List[int] = []
 
@@ -76,29 +79,41 @@ class PerceptualLoss(nn.Module):
         self.N_phi_p: Tensor = Tensor(N_phi_p)
 
     def forward(self, input: Tensor, target: Tensor, feature_extractor: bool = True):
-        return F.perceptual_loss(input, target, self.N_phi_p, self.feature_extractor if feature_extractor else None)
-    
+        return F.perceptual_loss(
+            input,
+            target,
+            self.N_phi_p,
+            self.feature_extractor if feature_extractor else None,
+        )
+
+
 # pnsr
+
 
 class PeakNoiseSignalRatio(nn.Module):
     def __init__(self, max: float) -> None:
         super().__init__()
         self.max = max
+
     def forward(self, input: Tensor, target: Tensor) -> Tensor:
         return F.pnsr(input, target, self.max)
 
 
 # Total variance
 
+
 class TV(nn.Module):
     """
     # Total Variance (TV)
-     """
+    """
+
     def __init__():
         super().__init__()
+
     def forward(self, input: Tensor) -> Tensor:
         return F.total_variance(input)
-    
+
+
 # lambda
 class LagrangianFunctional(_Base):
     """

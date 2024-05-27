@@ -38,6 +38,7 @@ def interval(algo: LRScheduler) -> str:
     else:
         return "epoch"
 
+
 class Module(LightningModule):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -50,22 +51,34 @@ class Module(LightningModule):
     def training_step(self, batch: Tensor, idx: int) -> Tensor:
         args = self.loss_forward(batch, idx)
         return self._compute_training_loss(*args)
-    
+
     @torch.no_grad()
     def validation_step(self, batch: Tensor, idx: int) -> None:
         args = self.loss_forward(batch, idx)
         return self._compute_valid_metrics(*args)
-    
+
     def _compute_training_loss(self, *args) -> Tensor | Sequence[Tensor]:
         args = self.criterion(*args)
-        self.log_dict({f"Training/{k}": v for k, v in zip(self.criterion.labels, args)}, True, True, True, True)
+        self.log_dict(
+            {f"Training/{k}": v for k, v in zip(self.criterion.labels, args)},
+            True,
+            True,
+            True,
+            True,
+        )
         self.log("hp_metric", sum(args[:-1]), True, True, True, True)
         return args[-1]
-    
+
     @torch.no_grad()
     def _compute_valid_metrics(self, *args) -> None:
         args = self.criterion.val_step(*args)
-        self.log_dict({f"Validation/{k}": v for k, v in zip(self.criterion.val_labels, args)}, True, True, True, True)
+        self.log_dict(
+            {f"Validation/{k}": v for k, v in zip(self.criterion.val_labels, args)},
+            True,
+            True,
+            True,
+            True,
+        )
 
     def get_param_groups(self, *triggers) -> Tuple:
         """
@@ -113,7 +126,7 @@ class Module(LightningModule):
                 optimizer,
                 **self.scheduler_kwargs.update(
                     {"total_steps": self.trainer.estimated_stepping_batches}
-                )
+                ),
             )
         else:
             return VALID_SCHEDULERS[self.scheduler](optimizer, **self.scheduler_kwargs)
@@ -131,4 +144,4 @@ class Module(LightningModule):
         }
 
 
-__all__ = ['Module']
+__all__ = ["Module"]
