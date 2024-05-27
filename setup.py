@@ -34,10 +34,9 @@ if __name__ == "__main__":
             "Topic :: Scientific/Engineering :: Artificial Intelligence",
             "Topic :: Scientific/Engineering :: Information Analysis",
             "Topic :: Scientific/Engineering :: Mathematics",
+            "Topic :: Scientific/Engineering",
+            "Topic :: Software Development",
+            "Topic :: Software Development :: Libraries",
             "Topic :: Software Development :: Libraries :: Python Modules",
-            "Framework :: PyTorch",
-            "Framework :: PyTorch Lightning",
-            "Topic :: Scientific/Engineering :: Artificial Intelligence :: Machine Learning",
-            "Topic :: Scientific/Engineering :: Artificial Intelligence :: Deep Learning",
         ],
     )
