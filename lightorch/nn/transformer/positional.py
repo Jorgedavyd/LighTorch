@@ -111,7 +111,7 @@ class AbsoluteSinusoidalPositionalEncoding(nn.Module):
         super(AbsoluteSinusoidalPositionalEncoding, self).__init__()
         self.dropout = nn.Dropout(dropout)
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
         batch_size, seq_len, embed_dim = x.size()
         # create positional encoding
         pos_embedding = torch.empty(seq_len, embed_dim)
@@ -123,6 +123,7 @@ class AbsoluteSinusoidalPositionalEncoding(nn.Module):
                     i / pow(10000, (2 * j) / embed_dim)
                 )
         x += pos_embedding.unsqueeze(0)
+        
         return self.dropout(x)
 
 
