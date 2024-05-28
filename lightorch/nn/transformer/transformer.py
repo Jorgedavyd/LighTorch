@@ -81,7 +81,7 @@ class Transformer(nn.Module):
                 hist.append(out)
 
             for cross, decoder in zip(hist, self.decoder):
-                out = decoder(**kwargs, cross)
+                out = decoder(**kwargs, cross = cross)
             
             out = self.fc(out)
 
@@ -102,7 +102,7 @@ class CrossTransformer(nn.Module):
         self.fc = fc
         self.n_layers = n_layers
 
-    def _single_forward(self, cells: Sequence[TransformerCell], layer: int, first_args: Sequence, second_args: Sequence) -> Tensor:
+    def _single_forward(self, cells: Sequence[TransformerCell], first_args: Sequence, second_args: Sequence) -> Tensor:
         out0 = cells[0].self_attention(*first_args)
         out1 = cells[1].self_attention(*second_args)
 

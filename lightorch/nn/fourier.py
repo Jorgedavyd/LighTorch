@@ -5,6 +5,7 @@ import torch
 from torch.nn import init
 from math import sqrt
 import torch.nn.functional as f
+from typing import Tuple
 
 class _FourierConvNd(nn.Module):
     def __init__(
@@ -12,6 +13,7 @@ class _FourierConvNd(nn.Module):
         in_channels: int,
         out_channels: int,
         *kernel_size,
+        padding: Tuple[int],
         bias: bool = True,
         eps: float = 1e-5,
         pre_fft: bool = True,
@@ -22,7 +24,7 @@ class _FourierConvNd(nn.Module):
         super().__init__()
 
         self.factory_kwargs = {"device": device, "dtype": dtype}
-
+        self.padding = padding
         if pre_fft:
             self.fft = lambda x: fftn(x, dim=(-i for i in range(1, len(kernel_size))))
         else:
@@ -73,7 +75,12 @@ class FourierConv1d(_FourierConvNd):
     def forward(self, input: Tensor) -> Tensor:
         if self.fft:
             input = self.fft(input)
-        out = F.fourierconv1d(input, self.one, self.weight, self.bias)
+        if self.padding is not None:
+            out = F.fourierconv1d(input, self.one, self.weight, self.bias)
+        else:
+            out = F.fourierconv1d(f.pad(
+                input, self.padding, mode = 'constant', value = 0
+            ), self.one, self.weight, self.bias)
         if self.ifft:
             return self.ifft(out)
         return out
@@ -86,7 +93,11 @@ class FourierConv2d(_FourierConvNd):
     def forward(self, input: Tensor) -> Tensor:
         if self.fft:
             input = self.fft(input)
-        out = F.fourierconv2d(input, self.one, self.weight, self.bias)
+        if self.padding is not None:
+            out = F.fourierconv2d(input, self.one, self.weight, self.bias)
+        else:
+            out = F.fourierconv2d(f.pad(input, self.padding, 'constant', value = 0), self.one, self.weight, self.bias)
+            
         if self.ifft:
             return self.ifft(out)
         return out
@@ -99,7 +110,10 @@ class FourierConv3d(_FourierConvNd):
     def forward(self, input: Tensor) -> Tensor:
         if self.fft:
             input = self.fft(input)
-        out = F.fourierconv3d(input, self.one, self.weight, self.bias)
+        if self.padding is not None:
+            out = F.fourierconv3d(input, self.one, self.weight, self.bias)
+        else:
+            out = F.fourierconv3d(f.pad(input, self.padding, 'constant', value = 0), self.one, self.weight, self.bias)
         if self.ifft:
             return self.ifft(out)
         return out
@@ -111,7 +125,10 @@ class FourierDeconv1d(_FourierDeconvNd):
     def forward(self, input: Tensor) -> Tensor:
         if self.fft:
             input = self.fft(input)
-        out = F.fourierdeconv1d(input, self.one, self.weight, self.bias, self.eps)
+        if self.padding is not None:
+            out = F.fourierdeconv1d(input, self.one, self.weight, self.bias)
+        else:
+            out = F.fourierdeconv1d(f.pad(input, self.padding, 'constant', value = 0), self.one, self.weight, self.bias)
         if self.ifft:
             return self.ifft(out)
         return out
@@ -124,7 +141,10 @@ class FourierDeconv2d(_FourierDeconvNd):
     def forward(self, input: Tensor) -> Tensor:
         if self.fft:
             input = self.fft(input)
-        out = F.fourierdeconv2d(input, self.one, self.weight, self.bias, self.eps)
+        if self.padding is not None:
+            out = F.fourierdeconv2d(input, self.one, self.weight, self.bias)
+        else:
+            out = F.fourierdeconv2d(f.pad(input, self.padding, 'constant', value = 0), self.one, self.weight, self.bias)
         if self.ifft:
             return self.ifft(out)
         return out
@@ -137,7 +157,10 @@ class FourierDeconv3d(_FourierDeconvNd):
     def forward(self, input: Tensor) -> Tensor:
         if self.fft:
             input = self.fft(input)
-        out = F.fourierdeconv3d(input, self.one, self.weight, self.bias, self.eps)
+        if self.padding is not None:
+            out = F.fourierdeconv3d(input, self.one, self.weight, self.bias)
+        else:
+            out = F.fourierdeconv3d(f.pad(input, self.padding, 'constant', value = 0), self.one, self.weight, self.bias)
         if self.ifft:
             return self.ifft(out)
         return out

@@ -205,4 +205,5 @@ __all__ = [
     "PeakNoiseSignalRatio",
     "StyleLoss",
     "PerceptualLoss",
+    "Loss"
 ]

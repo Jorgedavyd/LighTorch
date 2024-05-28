@@ -1,5 +1,5 @@
 from setuptools import setup, find_packages
-from lightorch import __version__, __author__, __email__
+from lightorch import __author__, __email__
 from pathlib import Path
 
 this_directory = Path(__file__).parent
@@ -8,7 +8,7 @@ long_description = (this_directory / "README.md").read_text()
 if __name__ == "__main__":
     setup(
         name="lightorch",
-        version=__version__,
+        version='{{VERSION_PLACEHOLDER}}',
         packages=find_packages(),
         author=__author__,
         long_description=long_description,

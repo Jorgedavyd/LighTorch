@@ -1,0 +1,46 @@
+name: Default
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: [3.7, 3.8, 3.9, 3.11, 3.12]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      
+      - name: Set up the dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pipreqs pip-tools
+          chmod +x requirements.sh
+          sh ./requirements.sh
+        
+      - name: Install dependencies
+        run: |
+          pip install pytest black
+          pip install -r requirements.txt
+
+      - name: Run black
+        id: black
+        run: |
+          black .
+          git config --global user.name 'Jorgedavyd'
+          git config --global user.email 'jorged.encyso@gmail.com'
+          git diff --exit-code || (git add . && git commit -m "Automatically formatted with black" && git push)
+
+      - name: Run tests
+        run: |
+          pytest tests/  
