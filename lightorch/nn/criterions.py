@@ -2,7 +2,13 @@ from torch import nn, Tensor
 from typing import Sequence, Dict, Tuple, Optional, Callable, Sequence, List
 import torch
 from . import functional as F
+from itertools import chain
 
+def _merge_dicts(dicts: Sequence[Dict[str, float]]) -> Dict[str, float]:
+    out = dict()
+    for dict_ in dicts:
+        out.update(dict_)
+    return out
 
 class _Base(nn.Module):
     def __init__(
@@ -11,10 +17,34 @@ class _Base(nn.Module):
         factors: Dict[str, float] | Sequence[Dict[str, float]],
     ) -> None:
         super().__init__()
-        self.labels = labels.append("Overall")
+        if 'Overall' not in labels:
+            self.labels = labels.append("Overall")
         self.factors = factors
 
+class Loss(_Base):
+    def __init__(self, *loss, alpha: Sequence[float]) -> None:
+        super().__init__(
+            list(set([*chain.from_iterable([i.labels for i in loss])])),
+            _merge_dicts([i.factors for i in loss])
+        )
+        assert (len(self.loss)==len(self.alpha)), 'Must have the same length of losses as factors'
+        self.loss = loss
+        self.alpha = alpha
 
+    def forward(self, *args) -> Tuple[Tensor, ...]:
+        loss = 0
+        out_list = []
+        
+        for alpha, loss in zip(self.alpha, self.loss):
+            out = loss(*args)
+            out_list.append(out)
+            loss += alpha*out
+        
+        out_list.append(loss)
+        
+        return tuple(*out_list)
+            
+        
 class ELBO(_Base):
     """
     # Variational Autoencoder Loss:

@@ -79,9 +79,9 @@ class _AttentionBase(nn.Module):
 
 
 class SelfAttention(nn.Module):
-    def __init__(self, type: _AttentionBase, *args, **kwargs) -> None:
+    def __init__(self, attention: _AttentionBase) -> None:
         super().__init__()
-        self.attention = type(*args, **kwargs)
+        self.attention = attention
 
     def forward(self, input: Tensor) -> Tensor:
         return self.attention(input, input, input)
@@ -89,23 +89,20 @@ class SelfAttention(nn.Module):
 
 class CrossAttention(nn.Module):
     def __init__(
-        self, type: _AttentionBase, method: str = "i i c", *args, **kwargs
+        self, attention: _AttentionBase, method: str = "i i c"
     ) -> None:
         super().__init__()
-        self.attention = type(*args, **kwargs)
+        self.attention = attention
         self.method = method.lower()
+        self.valid = {
+            "i i c": lambda input, cross: self.attention(input, input, cross),
+            "c c i": lambda input, cross: self.attention(cross, cross, input),
+            "i c c": lambda input, cross: self.attention(input, cross, cross),
+        }
+        assert (method in self.valid), 'Not valid method'
 
     def forward(self, input: Tensor, cross: Tensor) -> Tensor:
-        match self.method:
-            case "i i c":
-                return self.attention(input, input, cross)
-            case "c c i":
-                return self.attention(cross, cross, input)
-            case "i c c":
-                return self.attention(input, cross, cross)
-
-        raise ValueError(f"Not valid method: {self.method}")
-
+        return self.valid[self.method](input, cross)
 
 class GroupedQueryAttention(_AttentionBase):
     def __init__(

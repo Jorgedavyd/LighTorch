@@ -6,19 +6,6 @@ from torch.nn import init
 from math import sqrt
 import torch.nn.functional as f
 
-
-class IdentityConvolution(nn.Module):
-    def __init__(self, in_channels: int, out_channels: int) -> None:
-        super().__init__()
-        self.weight = torch.ones(out_channels, in_channels, 1, 1, requires_grad=False)
-
-    @torch.no_grad()
-    def forward(self, input: Tensor) -> Tensor:
-        return f.conv2d(input.real, self.weight) + 1j * f.conv2d(
-            input.imag, self.weight
-        )
-
-
 class _FourierConvNd(nn.Module):
     def __init__(
         self,
@@ -26,16 +13,13 @@ class _FourierConvNd(nn.Module):
         out_channels: int,
         *kernel_size,
         bias: bool = True,
+        eps: float = 1e-5,
         pre_fft: bool = True,
         post_ifft: bool = False,
         device=None,
         dtype=None,
     ) -> None:
         super().__init__()
-        if in_channels == out_channels:
-            self.resample = nn.Identity()
-        else:
-            self.resample = IdentityConvolution(in_channels, out_channels)
 
         self.factory_kwargs = {"device": device, "dtype": dtype}
 
@@ -47,11 +31,17 @@ class _FourierConvNd(nn.Module):
             self.ifft = lambda x: ifftn(x, dim=(-i for i in range(1, len(kernel_size))))
         else:
             self.ifft = False
-
-        self.weight = nn.Parameter(torch.empty(*kernel_size, **self.factory_kwargs))
+        
+        if out_channels == in_channels:
+            self.one = None
+        else:
+            self.one = torch.ones(out_channels, in_channels, 1, 1) + 1j*0
+        
+        self.eps = eps
+        self.weight = nn.Parameter(torch.empty(out_channels, *kernel_size, **self.factory_kwargs))
 
         if bias:
-            self.bias = nn.Parameter(torch.empty(kernel_size[0], **self.factory_kwargs))
+            self.bias = nn.Parameter(torch.empty(out_channels, **self.factory_kwargs))
         else:
             self.bias = None
 
@@ -71,53 +61,22 @@ class _FourierConvNd(nn.Module):
                 bound = 1 / sqrt(fan_in)
                 init.uniform_(self.bias, -bound, bound)
 
-    def forward(self, input: Tensor) -> Tensor:
-        if self.fft:
-            input = self.fft(input)
-        out = F.fourierconvNd(input, self.weight, self.bias)
-        if self.ifft:
-            return self.ifft(out)
-        return out
-
 
 class _FourierDeconvNd(_FourierConvNd):
-    def __init__(
-        self,
-        in_channels: int,
-        out_channels: int,
-        *kernel_size,
-        bias: bool = True,
-        pre_fft: bool = True,
-        post_ifft: bool = False,
-        device=None,
-        dtype=None,
-    ) -> None:
-        super().__init__(
-            in_channels,
-            out_channels,
-            *kernel_size,
-            bias=bias,
-            pre_fft=pre_fft,
-            post_ifft=post_ifft,
-            device=device,
-            dtype=dtype,
-        )
-
-    def forward(self, input: Tensor) -> Tensor:
-        if self.fft:
-            input = self.fft(input)
-        out = F.fourierdeconvNd(input, self.weight, self.bias)
-        if self.ifft:
-            return self.ifft(out)
-        return out
-
+    def __init__(self, in_channels: int, out_channels: int, *kernel_size, bias: bool = True, eps: float = 0.00001, pre_fft: bool = True, post_ifft: bool = False, device=None, dtype=None) -> None:
+        super().__init__(in_channels, out_channels, *kernel_size, bias=bias, eps=eps, pre_fft=pre_fft, post_ifft=post_ifft, device=device, dtype=dtype)
 
 class FourierConv1d(_FourierConvNd):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
     def forward(self, input: Tensor) -> Tensor:
-        return super().forward(input)
+        if self.fft:
+            input = self.fft(input)
+        out = F.fourierconv1d(input, self.one, self.weight, self.bias)
+        if self.ifft:
+            return self.ifft(out)
+        return out
 
 
 class FourierConv2d(_FourierConvNd):
@@ -125,7 +84,12 @@ class FourierConv2d(_FourierConvNd):
         super().__init__(*args, **kwargs)
 
     def forward(self, input: Tensor) -> Tensor:
-        return super().forward(input)
+        if self.fft:
+            input = self.fft(input)
+        out = F.fourierconv2d(input, self.one, self.weight, self.bias)
+        if self.ifft:
+            return self.ifft(out)
+        return out
 
 
 class FourierConv3d(_FourierConvNd):
@@ -133,15 +97,24 @@ class FourierConv3d(_FourierConvNd):
         super().__init__(*args, **kwargs)
 
     def forward(self, input: Tensor) -> Tensor:
-        return super().forward(input)
-
+        if self.fft:
+            input = self.fft(input)
+        out = F.fourierconv3d(input, self.one, self.weight, self.bias)
+        if self.ifft:
+            return self.ifft(out)
+        return out
 
 class FourierDeconv1d(_FourierDeconvNd):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
     def forward(self, input: Tensor) -> Tensor:
-        return super().forward(input)
+        if self.fft:
+            input = self.fft(input)
+        out = F.fourierdeconv1d(input, self.one, self.weight, self.bias, self.eps)
+        if self.ifft:
+            return self.ifft(out)
+        return out
 
 
 class FourierDeconv2d(_FourierDeconvNd):
@@ -149,7 +122,12 @@ class FourierDeconv2d(_FourierDeconvNd):
         super().__init__(*args, **kwargs)
 
     def forward(self, input: Tensor) -> Tensor:
-        return super().forward(input)
+        if self.fft:
+            input = self.fft(input)
+        out = F.fourierdeconv2d(input, self.one, self.weight, self.bias, self.eps)
+        if self.ifft:
+            return self.ifft(out)
+        return out
 
 
 class FourierDeconv3d(_FourierDeconvNd):
@@ -157,7 +135,12 @@ class FourierDeconv3d(_FourierDeconvNd):
         super().__init__(*args, **kwargs)
 
     def forward(self, input: Tensor) -> Tensor:
-        return super().forward(input)
+        if self.fft:
+            input = self.fft(input)
+        out = F.fourierdeconv3d(input, self.one, self.weight, self.bias, self.eps)
+        if self.ifft:
+            return self.ifft(out)
+        return out
 
 
 __all__ = [
