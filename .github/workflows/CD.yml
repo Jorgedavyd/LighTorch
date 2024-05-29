@@ -1,4 +1,4 @@
-name: To PyPI
+name: Delivery automation
 
 on:
   push:
@@ -30,7 +30,6 @@ jobs:
 
       - name: Update version in setup.py and lightorch/_version.py
         run: |
-          sed -i "s/{{VERSION_PLACEHOLDER}}/${{ env.TAG_NAME }}/g" setup.py
           sed -i "s/{{VERSION_PLACEHOLDER}}/${{ env.TAG_NAME }}/g" lightorch/_version.py
 
       - name: Build the package
