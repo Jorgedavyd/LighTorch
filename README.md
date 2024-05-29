@@ -1,6 +1,7 @@
 [![license](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![code-style](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![pypi](https://img.shields.io/pypi/v/lightorch)](https://pypi.org/project/lightorch)
+![CI-CD](https://github.com/Jorgedavyd/LighTorch/actions/workflows/default.yml/badge.svg)
 
 # LighTorch
 
