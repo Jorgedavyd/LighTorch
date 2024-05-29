@@ -88,7 +88,8 @@ $\mathcal{L}_{style} := \sum_{p \in P} \frac{||(\psi_p^{I(\theta)})^T(\psi_p^{I(
 
 ```
 ## PerceptualLoss
-$$\mathcal{L}_{perceptual} := \sum_{p \in P} \frac{||\psi_p^{I(\theta)} - \psi_p^{O}||_1}{N_{\psi_{p}}}$$
+
+$\mathcal{L}_{perceptual} := \sum_{p \in P} \frac{||\psi_p^{I(\theta)} - \psi_p^{O}||_1}{N_{\psi_{p}}}$
 
 - $N_{\psi_{p}}$: C * H * W of the p-th feature space.
 - $\psi_{p}$: P-th feature space output.
