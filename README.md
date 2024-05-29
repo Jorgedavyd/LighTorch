@@ -14,7 +14,8 @@
 A Pytorch and Lightning based framework for research and ml pipeline automation.
 
 ## Framework
-$\text{Define Hyperparameter space} \to \text{Genetic algorithms(single-objective/multi-objective)} \to \text{Best hyperparameters in config.yaml} \to \text{Training session}$
+$\text{Hyperparameter space} \to \text{Genetic algorithms(single-objective/multi-objective)}$
+$\to \text{Best hyperparameters in config.yaml} \to \text{Training session}$
 
 ### htuning.py
 ```python
