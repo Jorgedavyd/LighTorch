@@ -73,13 +73,13 @@ Mean Squared Error loss module, the same as `nn.MSELoss` adjusted for LighTorch.
 ```
 
 ## StyleLoss
-$$
+$
 
 \begin{equation}
     \mathcal{L}_{style} := \sum_{p \in P} \frac{||(\psi_p^{I(\theta)})^T(\psi_p^{I(\theta)}) - (\psi_p^{O})^T(\psi_p^{O})||_1}{F_p} 
 \end{equation}
 
-$$
+$
 
 - `feature_extractor (FeatureExtractor)`: Feature extractor module that return features from hidden layers.  
 - `factor (float)`: Multiplication factor of the Gram-Matrix based style loss.
@@ -94,13 +94,13 @@ $$
 
 ```
 ## PerceptualLoss
-$$
+$
 
 \begin{equation}
     \mathcal{L}_{perceptual} := \sum_{p \in P} \frac{||\psi_p^{I(\theta)} - \psi_p^{O}||_1}{N_{\psi_{p}}}
 \end{equation}
 
-$$
+$
 
 - $N_{\psi_{p}}$: C * H * W of the p-th feature space.
 - $\psi_{p}$: P-th feature space output.
@@ -119,12 +119,12 @@ $$
 
 ```
 ## PeakSignalNoiseRatio
-$$
+$
 \begin{equation}
     \mathcal{L}_{PSNR} := 10 \log_{10}\left(\frac{MAX^2}{MSE}\right)
 \end{equation}
 
-$$
+$
 `Arguments`
 - `factor (float)`: Multiplication factor of the loss.
 - `max (float)`: Maximum value of the input and target space.
@@ -137,11 +137,11 @@ $$
 ```
 
 ## TV
-$$
+$
 \begin{equation}
     \mathcal{L}_{tv} = \sum_{i,j} \left(|| I^{i, j+1} - I^{i, j}||_1 + || I^{i+1, j} - I^{i, j}||_1 \right)
 \end{equation}
-$$
+$
 `Arguments`
 - `factor (float)`: Multiplication factor of the loss.
 
@@ -215,22 +215,22 @@ dnn(sample_input) #-> output (32, 1)
 # fourier
 This module has been made to create highly paralelizable convolutions with the convolution theorems:
 1. Convolution Theorem:
-$$
+$
 \begin{equation}
     \mathcal{F}(f * g) = \mathcal{F}(f) \odot \mathcal{F}(g)
 \end{equation}
-$$
+$
 
 2. Deconvolution implication:
-$$
+$
 \begin{equation}
     \frac{\mathcal{F}(f*g)}{\mathcal{F}(g) + \epsilon} = \frac{\mathcal{F}(f) \odot \mathcal{F}(g)}{\mathcal{F}(g) + \epsilon} \approx \mathcal{F}(f)
 \end{equation}
-$$
+$
 
 ## FourierConv
 This module expands an input signal channels dimension from in_channels to out_channels with a non-learnable convolution with kernel size: 1 and stride: 1. This computation is efficiently accomplished taking advantage of its highly paralelizable nature. After that the input signal is segmented into sub-signals of size kernel_size, then the convolution in the fourier space is computed with a trainable weight and bias channel-wise.
-$$\text{Expand convolution} \to \text{Patch} \to \text{Fourier Space convolution}: \mathcal{F}(I) \odot \mathcal{F}(W) + \mathcal{F}(b)$$
+$\text{Expand convolution} \to \text{Patch} \to \text{Fourier Space convolution}: \mathcal{F}(I) \odot \mathcal{F}(W) + \mathcal{F}(b)$
 
 ```python 
 from lightorch.nn.fourier import FourierConv2d
@@ -248,7 +248,7 @@ model(sample_input) #-> output (32, 20, 256, 256)
 ```
 
 ## FourierDeconv
-$$\text{Expand convolution} \to \text{Patch} \to \text{Fourier Space deconvolution}: \frac{\mathcal{F}(I)}{\mathcal{F}(W)}$$
+$\text{Expand convolution} \to \text{Patch} \to \text{Fourier Space deconvolution}: \frac{\mathcal{F}(I)}{\mathcal{F}(W)}$
 
 ```python 
 from lightorch.nn.fourier import FourierConv2d
@@ -310,17 +310,17 @@ model(sample_input) #-> output (32, 20, 10)
 Partial convolutions from [this research](https://openaccess.thecvf.com/content_ECCV_2018/papers/Guilin_Liu_Image_Inpainting_for_ECCV_2018_paper.pdf) redefined.
 
 
-$$
+$
 O = W^T (X \odot M) \frac{sum(1)}{sum(M)} + b
-$$
+$
 
 
-$$
+$
 m' = \begin{cases} 
 1 & \text{if } \sum(M) > 0 \\
 0 & \text{otherwise}
 \end{cases}
-$$
+$
 
 ```python 
 from lightorch.nn.partial import PartialConv2d
