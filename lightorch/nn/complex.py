@@ -1,6 +1,7 @@
 from torch import nn, Tensor
 from copy import deepcopy
 
+
 class Complex(nn.Module):
     """
     # Complex
@@ -14,5 +15,6 @@ class Complex(nn.Module):
 
     def forward(self, x: Tensor) -> Tensor:
         return self.Re_mod(x.real) + 1j * self.Im_mod(x.imag)
+
 
 __all__ = ["Complex"]

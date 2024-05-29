@@ -4,11 +4,13 @@ import torch
 from . import functional as F
 from itertools import chain
 
+
 def _merge_dicts(dicts: Sequence[Dict[str, float]]) -> Dict[str, float]:
     out = dict()
     for dict_ in dicts:
         out.update(dict_)
     return out
+
 
 class _Base(nn.Module):
     def __init__(
@@ -17,33 +19,36 @@ class _Base(nn.Module):
         factors: Dict[str, float] | Sequence[Dict[str, float]],
     ) -> None:
         super().__init__()
-        if 'Overall' not in labels:
+        if "Overall" not in labels:
             self.labels = labels.append("Overall")
         self.factors = factors
+
 
 class Loss(_Base):
     def __init__(self, *loss) -> None:
         super().__init__(
             list(set([*chain.from_iterable([i.labels for i in loss])])),
-            _merge_dicts([i.factors for i in loss])
+            _merge_dicts([i.factors for i in loss]),
         )
-        assert (len(self.loss)==len(self.factors)), 'Must have the same length of losses as factors'
+        assert len(self.loss) == len(
+            self.factors
+        ), "Must have the same length of losses as factors"
         self.loss = loss
 
     def forward(self, **kwargs) -> Tuple[Tensor, ...]:
         loss = 0
         out_list = []
-        
+
         for loss in self.loss:
             loss_, out_ = loss(**kwargs)
             out_list.append(loss_)
             loss += out_
-        
+
         out_list.append(loss)
-        
+
         return tuple(*out_list)
-            
-        
+
+
 class ELBO(_Base):
     """
     # Variational Autoencoder Loss:
@@ -64,9 +69,14 @@ class ELBO(_Base):
         """
         input, target, logvar, mu
         """
-        L_recons, L_recons_out = self.L_recons(kwargs['input'], kwargs['target'])
+        L_recons, L_recons_out = self.L_recons(kwargs["input"], kwargs["target"])
 
-        L_kl = -0.5 * torch.sum(torch.log(kwargs['logvar']) - 1 + kwargs['logvar'] + torch.pow(kwargs['mu'], 2))
+        L_kl = -0.5 * torch.sum(
+            torch.log(kwargs["logvar"])
+            - 1
+            + kwargs["logvar"]
+            + torch.pow(kwargs["mu"], 2)
+        )
 
         return (L_recons, L_kl, L_recons_out + self.beta * L_kl)
 
@@ -76,8 +86,13 @@ class StyleLoss(_Base):
     """
     forward (input, target, feature_extractor: bool = True)
     """
-    def __init__(self, feature_extractor, sample_tensor: Tensor, factor: float = 1e-3) -> None:
-        super().__init__(labels=[self.__class__.__name__], factors={self.__class__.__name__: factor})
+
+    def __init__(
+        self, feature_extractor, sample_tensor: Tensor, factor: float = 1e-3
+    ) -> None:
+        super().__init__(
+            labels=[self.__class__.__name__], factors={self.__class__.__name__: factor}
+        )
         self.feature_extractor = feature_extractor
 
         F_p: List[int] = []
@@ -90,10 +105,10 @@ class StyleLoss(_Base):
 
     def forward(self, **kwargs) -> Tuple[Tensor, ...]:
         out = F.style_loss(
-            kwargs['input'],
-            kwargs['target'],
+            kwargs["input"],
+            kwargs["target"],
             self.F_p,
-            self.feature_extractor if kwargs.get('feature_extractor', True) else None,
+            self.feature_extractor if kwargs.get("feature_extractor", True) else None,
         )
         return out, self.factors[self.__class__.__name__] * out
 
@@ -103,11 +118,11 @@ class PerceptualLoss(_Base):
     """
     forward (input, target, feature_extractor: bool = True)
     """
-    def __init__(self, feature_extractor, sample_tensor: Tensor, factor: float = 1e-3) -> None:
-        super().__init__(
-            [self.__class__.__name__],
-            {self.__class__.__name__: factor}
-        )
+
+    def __init__(
+        self, feature_extractor, sample_tensor: Tensor, factor: float = 1e-3
+    ) -> None:
+        super().__init__([self.__class__.__name__], {self.__class__.__name__: factor})
         self.feature_extractor = feature_extractor
         N_phi_p: List[int] = []
 
@@ -119,12 +134,12 @@ class PerceptualLoss(_Base):
 
     def forward(self, **kwargs) -> Tensor:
         out = F.perceptual_loss(
-            kwargs['input'],
-            kwargs['target'],
+            kwargs["input"],
+            kwargs["target"],
             self.N_phi_p,
-            self.feature_extractor if kwargs.get('feature_extractor', True) else None,
+            self.feature_extractor if kwargs.get("feature_extractor", True) else None,
         )
-        return out, self.factors[self.__class__.__name__]*out
+        return out, self.factors[self.__class__.__name__] * out
 
 
 # pnsr
@@ -134,18 +149,18 @@ class PeakNoiseSignalRatio(_Base):
     """
     forward (input, target)
     """
+
     def __init__(self, max: float, factor: float = 1) -> None:
-        super().__init__(
-            [self.__class__.__name__],
-            {self.__class__.__name__: factor}
-        )
+        super().__init__([self.__class__.__name__], {self.__class__.__name__: factor})
         self.max = max
 
     def forward(self, **kwargs) -> Tensor:
-        out = F.psnr(kwargs['input'], kwargs['target'], self.max)
+        out = F.psnr(kwargs["input"], kwargs["target"], self.max)
         return out, out * self.factors[self.__class__.__name__]
-    
+
+
 # Total variance
+
 
 class TV(nn.Module):
     """
@@ -154,14 +169,12 @@ class TV(nn.Module):
     """
 
     def __init__(self, factor: float = 1):
-        super().__init__(
-            [self.__class__.__name__],
-            {self.__class__.__name__: factor}
-        )
+        super().__init__([self.__class__.__name__], {self.__class__.__name__: factor})
 
     def forward(self, **kwargs) -> Tensor:
-        out = F.total_variance(kwargs['input'])
-        return out, out*self.factors[self.__class__.__name__]
+        out = F.total_variance(kwargs["input"])
+        return out, out * self.factors[self.__class__.__name__]
+
 
 # lambda
 class LagrangianFunctional(_Base):
@@ -205,5 +218,5 @@ __all__ = [
     "PeakNoiseSignalRatio",
     "StyleLoss",
     "PerceptualLoss",
-    "Loss"
+    "Loss",
 ]

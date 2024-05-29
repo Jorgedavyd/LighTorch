@@ -123,7 +123,7 @@ class AbsoluteSinusoidalPositionalEncoding(nn.Module):
                     i / pow(10000, (2 * j) / embed_dim)
                 )
         x += pos_embedding.unsqueeze(0)
-        
+
         return self.dropout(x)
 
 
