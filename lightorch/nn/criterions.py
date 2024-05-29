@@ -48,19 +48,37 @@ class Loss(LighTorchLoss):
 
         return tuple(*out_list)
 
+
 class MSELoss(nn.MSELoss):
-    def __init__(self, size_average=None, reduce=None, reduction: str = 'mean', factor: float = 1) -> None:
+    def __init__(
+        self, size_average=None, reduce=None, reduction: str = "mean", factor: float = 1
+    ) -> None:
         super().__init__(size_average, reduce, reduction)
-        LighTorchLoss.__init__(self, ['MSE'], {'MSE': factor})
+        LighTorchLoss.__init__(self, ["MSE"], {"MSE": factor})
+
     def forward(self, input: Tensor, target: Tensor) -> Tensor:
         return super().forward(input, target)
-    
+
+
 class CrossEntropyLoss(nn.CrossEntropyLoss):
-    def __init__(self, weight: Tensor | None = None, size_average=None, ignore_index: int = -100, reduce=None, reduction: str = 'mean', label_smoothing: float = 0, factor: float = 1) -> None:
-        super().__init__(weight, size_average, ignore_index, reduce, reduction, label_smoothing)
-        LighTorchLoss.__init__(self, ['Cross Entropy'], {'Cross Entropy': factor})
+    def __init__(
+        self,
+        weight: Tensor | None = None,
+        size_average=None,
+        ignore_index: int = -100,
+        reduce=None,
+        reduction: str = "mean",
+        label_smoothing: float = 0,
+        factor: float = 1,
+    ) -> None:
+        super().__init__(
+            weight, size_average, ignore_index, reduce, reduction, label_smoothing
+        )
+        LighTorchLoss.__init__(self, ["Cross Entropy"], {"Cross Entropy": factor})
+
     def forward(self, input: Tensor, target: Tensor) -> Tensor:
         return super().forward(input, target)
+
 
 class ELBO(LighTorchLoss):
     """
@@ -232,7 +250,6 @@ __all__ = [
     "StyleLoss",
     "PerceptualLoss",
     "Loss",
-    "LighTorchLoss"
-    "MSELoss",
-    "CrossEntropyLoss"
+    "LighTorchLoss" "MSELoss",
+    "CrossEntropyLoss",
 ]

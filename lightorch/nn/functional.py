@@ -370,7 +370,10 @@ def _style_forward(input_list: List[Tensor], gt_list: List[Tensor]) -> List[Tens
 
 
 def total_variance(input: Tensor) -> Tensor:
-    return torch.norm(input[:, :, :, :-1] - input[:, :, :, 1:], p=1).sum() + torch.norm(input[:, :, :-1, :] - input[:, :, 1:, :], p = 1).sum()
+    return (
+        torch.norm(input[:, :, :, :-1] - input[:, :, :, 1:], p=1).sum()
+        + torch.norm(input[:, :, :-1, :] - input[:, :, 1:, :], p=1).sum()
+    )
 
 
 def kl_div(mu: Tensor, logvar: Tensor) -> Tensor:

@@ -97,7 +97,7 @@ pyyaml==6.0.1
     # via
     #   lightning
     #   pytorch-lightning
-sympy==1.12
+sympy==1.12.1
     # via torch
 torch==2.3.0
     # via
