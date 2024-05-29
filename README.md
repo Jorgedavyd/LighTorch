@@ -1,8 +1,9 @@
-[![license](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![code-style](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+![status](https://img.shields.io/badge/status-beta-red.svg)
 [![pypi](https://img.shields.io/pypi/v/lightorch)](https://pypi.org/project/lightorch)
 ![CI](https://github.com/Jorgedavyd/LighTorch/actions/workflows/CI.yml/badge.svg)
 ![CD](https://github.com/Jorgedavyd/LighTorch/actions/workflows/CD.yml/badge.svg)
+[![license](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![code-style](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 # LighTorch
 
