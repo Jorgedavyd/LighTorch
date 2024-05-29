@@ -13,11 +13,100 @@
 
 A Pytorch and Lightning based framework for research and ml pipeline automation.
 
-# Modules
-Set useful architectures for several tasks.
+## Framework
+$\text{Define Hyperparameter space} \to \text{Genetic algorithms(single-objective/multi-objective)} \to \text{Best hyperparameters in config.yaml} \to \text{Training session}$
+
+### htuning.py
+```python
+from lightorch.htuning.optuna import htuning
+from ... import DataModule
+from ... import Model
+
+def objective(trial) -> Dict[str, float]:
+    ... # define hyperparameters
+    return hyperparameters
+
+if __name__ == '__main__':
+    htuning(
+        model_class = FourierVAE,
+        hparam_objective = objective,
+        datamodule = NormalModule,
+        valid_metrics = [f"Training/{name}" for name in [
+            "Pixel",
+            "Perceptual",
+            "Style",
+            "Total variance",
+            "KL Divergence"]],
+        directions = ['minimize', 'minimize', 'minimize', 'minimize', 'minimize'],
+        precision = 'medium',
+        n_trials = 150,
+    )
+```
+exec: `python3 -m htuning`
+
+### config.yaml
+```yaml
+trainer: # trainer arguments
+  logger: true 
+  enable_checkpointing: true
+  max_epochs: 250
+  accelerator: cuda
+  devices:  1
+  precision: 32
+  
+model:
+  class_path: utils.FourierVAE #model relative path
+  dict_kwargs: #**hparams
+    encoder_lr: 2e-2
+    encoder_wd: 0
+    decoder_lr: 1e-2
+    decoder_wd: 0
+    alpha:
+      - 0.02
+      - 0.003
+      - 0.003
+      - 0.01
+    beta: 0.00001
+    optimizer: adam
+
+data: # Dataset arguments
+  class_path: data.DataModule
+  init_args:
+    type_dataset: mnist 
+    batch_size: 12
+    pin_memory: true
+    num_workers: 8
+```
+
+### training.py
+```python
+from lightorch.training.cli import trainer
+from ... import DataModule
+from ... import Model
+
+if __name__ == '__main__':
+    trainer(
+        matmul_precision = 'medium', # default
+        deterministic = True, # default
+        seed = 123, # default
+    )
+```
+exec: `python3 -m training -c config.yaml`
+
+
+## Features
+- Built in Module class for:
+    - Adversarial training.
+    - Supervised, Self-supervised training.
+- Multi-Objective and Single-Objective optimization and Hyperparameter tuning with optuna.
+
+## Modules
+- KAN: Kolmogorov-Arnold Networks
 - Fourier Convolution.
+- Fourier Deconvolution.
 - Partial Convolution. (Optimized implementation)
-- Grouped Query Attention, Multi Query Attention, Multi Head Attention. (Interpretative usage)
+- Grouped Query Attention, Multi Query Attention, Multi Head Attention. (Interpretative usage) (with flash-attention option)
+- Self Attention, Cross Attention.
 - Normalization methods.
 - Positional encoding methods.
 - Embedding methods.
@@ -25,16 +114,22 @@ Set useful architectures for several tasks.
 - Useful utilities.
 - Built-in Default Feed Forward Networks.
 - Adaptation for $\mathbb{C}$ modules.
-
-# Features
-- Built in Module class for:
-    - Adversarial training.
-    - Supervised, Self-supervised training.
-- Multi-Objective optimization and Hyperparameter tuning with optuna.
-- Built-in default architectures: Transformers, VAEs, autoencoders for direct training on given data.
+- Interpretative Deep Neural Networks.
+- Monte Carlo forward methods.
 
 ## Contact  
 
 - [Linkedin](https://www.linkedin.com/in/jorge-david-enciso-mart%C3%ADnez-149977265/)
 - [GitHub](https://github.com/Jorgedavyd)
 - Email: jorged.encyso@gmail.com
+
+## Citation
+
+```
+@misc{lightorch,
+  author = {Jorge Enciso},
+  title = {LighTorch: Automated Deep Learning framework for researchers},
+  howpublished = {\url{https://github.com/Jorgedavyd/LighTorch}},
+  year = {2024}
+}
+```
