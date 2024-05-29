@@ -4,7 +4,6 @@ from lightning.pytorch.cli import LightningCLI
 
 
 def trainer(
-    datamodule: LightningDataModule,
     matmul_precision: str = "high",
     deterministic: bool = True,
     seed: bool | int = 123,
@@ -12,7 +11,6 @@ def trainer(
     torch.set_float32_matmul_precision(matmul_precision)
 
     LightningCLI(
-        datamodule_class=datamodule,
         seed_everything_default=seed,
         trainer_defaults={
             "deterministic": deterministic,
