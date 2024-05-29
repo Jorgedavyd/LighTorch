@@ -7,6 +7,7 @@ from math import sqrt
 import torch.nn.functional as f
 from typing import Tuple
 
+
 class _FourierConvNd(nn.Module):
     def __init__(
         self,
@@ -33,14 +34,16 @@ class _FourierConvNd(nn.Module):
             self.ifft = lambda x: ifftn(x, dim=(-i for i in range(1, len(kernel_size))))
         else:
             self.ifft = False
-        
+
         if out_channels == in_channels:
             self.one = None
         else:
-            self.one = torch.ones(out_channels, in_channels, 1, 1) + 1j*0
-        
+            self.one = torch.ones(out_channels, in_channels, 1, 1) + 1j * 0
+
         self.eps = eps
-        self.weight = nn.Parameter(torch.empty(out_channels, *kernel_size, **self.factory_kwargs))
+        self.weight = nn.Parameter(
+            torch.empty(out_channels, *kernel_size, **self.factory_kwargs)
+        )
 
         if bias:
             self.bias = nn.Parameter(torch.empty(out_channels, **self.factory_kwargs))
@@ -65,8 +68,30 @@ class _FourierConvNd(nn.Module):
 
 
 class _FourierDeconvNd(_FourierConvNd):
-    def __init__(self, in_channels: int, out_channels: int, *kernel_size, bias: bool = True, eps: float = 0.00001, pre_fft: bool = True, post_ifft: bool = False, device=None, dtype=None) -> None:
-        super().__init__(in_channels, out_channels, *kernel_size, bias=bias, eps=eps, pre_fft=pre_fft, post_ifft=post_ifft, device=device, dtype=dtype)
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        *kernel_size,
+        bias: bool = True,
+        eps: float = 0.00001,
+        pre_fft: bool = True,
+        post_ifft: bool = False,
+        device=None,
+        dtype=None,
+    ) -> None:
+        super().__init__(
+            in_channels,
+            out_channels,
+            *kernel_size,
+            bias=bias,
+            eps=eps,
+            pre_fft=pre_fft,
+            post_ifft=post_ifft,
+            device=device,
+            dtype=dtype,
+        )
+
 
 class FourierConv1d(_FourierConvNd):
     def __init__(self, *args, **kwargs) -> None:
@@ -78,9 +103,12 @@ class FourierConv1d(_FourierConvNd):
         if self.padding is not None:
             out = F.fourierconv1d(input, self.one, self.weight, self.bias)
         else:
-            out = F.fourierconv1d(f.pad(
-                input, self.padding, mode = 'constant', value = 0
-            ), self.one, self.weight, self.bias)
+            out = F.fourierconv1d(
+                f.pad(input, self.padding, mode="constant", value=0),
+                self.one,
+                self.weight,
+                self.bias,
+            )
         if self.ifft:
             return self.ifft(out)
         return out
@@ -96,8 +124,13 @@ class FourierConv2d(_FourierConvNd):
         if self.padding is not None:
             out = F.fourierconv2d(input, self.one, self.weight, self.bias)
         else:
-            out = F.fourierconv2d(f.pad(input, self.padding, 'constant', value = 0), self.one, self.weight, self.bias)
-            
+            out = F.fourierconv2d(
+                f.pad(input, self.padding, "constant", value=0),
+                self.one,
+                self.weight,
+                self.bias,
+            )
+
         if self.ifft:
             return self.ifft(out)
         return out
@@ -113,10 +146,16 @@ class FourierConv3d(_FourierConvNd):
         if self.padding is not None:
             out = F.fourierconv3d(input, self.one, self.weight, self.bias)
         else:
-            out = F.fourierconv3d(f.pad(input, self.padding, 'constant', value = 0), self.one, self.weight, self.bias)
+            out = F.fourierconv3d(
+                f.pad(input, self.padding, "constant", value=0),
+                self.one,
+                self.weight,
+                self.bias,
+            )
         if self.ifft:
             return self.ifft(out)
         return out
+
 
 class FourierDeconv1d(_FourierDeconvNd):
     def __init__(self, *args, **kwargs) -> None:
@@ -128,7 +167,12 @@ class FourierDeconv1d(_FourierDeconvNd):
         if self.padding is not None:
             out = F.fourierdeconv1d(input, self.one, self.weight, self.bias)
         else:
-            out = F.fourierdeconv1d(f.pad(input, self.padding, 'constant', value = 0), self.one, self.weight, self.bias)
+            out = F.fourierdeconv1d(
+                f.pad(input, self.padding, "constant", value=0),
+                self.one,
+                self.weight,
+                self.bias,
+            )
         if self.ifft:
             return self.ifft(out)
         return out
@@ -144,7 +188,12 @@ class FourierDeconv2d(_FourierDeconvNd):
         if self.padding is not None:
             out = F.fourierdeconv2d(input, self.one, self.weight, self.bias)
         else:
-            out = F.fourierdeconv2d(f.pad(input, self.padding, 'constant', value = 0), self.one, self.weight, self.bias)
+            out = F.fourierdeconv2d(
+                f.pad(input, self.padding, "constant", value=0),
+                self.one,
+                self.weight,
+                self.bias,
+            )
         if self.ifft:
             return self.ifft(out)
         return out
@@ -160,7 +209,12 @@ class FourierDeconv3d(_FourierDeconvNd):
         if self.padding is not None:
             out = F.fourierdeconv3d(input, self.one, self.weight, self.bias)
         else:
-            out = F.fourierdeconv3d(f.pad(input, self.padding, 'constant', value = 0), self.one, self.weight, self.bias)
+            out = F.fourierdeconv3d(
+                f.pad(input, self.padding, "constant", value=0),
+                self.one,
+                self.weight,
+                self.bias,
+            )
         if self.ifft:
             return self.ifft(out)
         return out

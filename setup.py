@@ -8,7 +8,7 @@ long_description = (this_directory / "README.md").read_text()
 if __name__ == "__main__":
     setup(
         name="lightorch",
-        version='{{VERSION_PLACEHOLDER}}',
+        version="{{VERSION_PLACEHOLDER}}",
         packages=find_packages(),
         author=__author__,
         long_description=long_description,

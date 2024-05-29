@@ -88,9 +88,7 @@ class SelfAttention(nn.Module):
 
 
 class CrossAttention(nn.Module):
-    def __init__(
-        self, attention: _AttentionBase, method: str = "i i c"
-    ) -> None:
+    def __init__(self, attention: _AttentionBase, method: str = "i i c") -> None:
         super().__init__()
         self.attention = attention
         self.method = method.lower()
@@ -99,10 +97,11 @@ class CrossAttention(nn.Module):
             "c c i": lambda input, cross: self.attention(cross, cross, input),
             "i c c": lambda input, cross: self.attention(input, cross, cross),
         }
-        assert (method in self.valid), 'Not valid method'
+        assert method in self.valid, "Not valid method"
 
     def forward(self, input: Tensor, cross: Tensor) -> Tensor:
         return self.valid[self.method](input, cross)
+
 
 class GroupedQueryAttention(_AttentionBase):
     def __init__(
