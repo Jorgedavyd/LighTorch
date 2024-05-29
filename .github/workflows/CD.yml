@@ -1,4 +1,4 @@
-name: Delivery automation
+name: CD
 
 on:
   push:

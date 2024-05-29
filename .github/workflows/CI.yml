@@ -1,4 +1,4 @@
-name: Integration automation
+name: CI
 
 on:
   push:
