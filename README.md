@@ -81,8 +81,6 @@ data: # Dataset arguments
 ### training.py
 ```python
 from lightorch.training.cli import trainer
-from ... import DataModule
-from ... import Model
 
 if __name__ == '__main__':
     trainer(
