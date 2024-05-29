@@ -19,8 +19,8 @@ $\text{Define Hyperparameter space} \to \text{Genetic algorithms(single-objectiv
 ### htuning.py
 ```python
 from lightorch.htuning.optuna import htuning
-from ... import DataModule
-from ... import Model
+from ... import NormalModule
+from ... import FourierVAE
 
 def objective(trial) -> Dict[str, float]:
     ... # define hyperparameters
@@ -87,8 +87,8 @@ from ... import Model
 if __name__ == '__main__':
     trainer(
         matmul_precision = 'medium', # default
-        deterministic = True, # default
-        seed = 123, # default
+        deterministic = True, # default for reproducibility
+        seed = 123, # default for reproducibility
     )
 ```
 exec: `python3 -m training -c config.yaml`
