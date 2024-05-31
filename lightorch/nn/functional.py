@@ -22,6 +22,7 @@ def _fourierconvNd(
 
     return x
 
+
 def _fourierdeconvNd(
     n: int, x: Tensor, weight: Tensor, bias: Tensor | None, eps: float = 1e-5
 ) -> Tensor:

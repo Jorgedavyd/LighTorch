@@ -14,7 +14,7 @@ def test_complex() -> None:
     sample_input = torch.randn(32, 10) + 1j * torch.randn(32, 10)
     layer = Complex(nn.Linear(10, 20))
     result = layer(sample_input)
-    assert result is not None, 'Complex failed'
+    assert result is not None, "Complex failed"
 
 
 def test_tv() -> None:
@@ -23,7 +23,8 @@ def test_tv() -> None:
     result = loss(input=input)
     assert result is not None, "TV loss failed"
 
-#Integrated
+
+# Integrated
 def test_style() -> None:
     input: Tensor = torch.randn(1, 3, 256, 256)
     target: Tensor = torch.randn(1, 3, 256, 256)
@@ -33,7 +34,7 @@ def test_style() -> None:
     assert result is not None, "StyleLoss failed"
 
 
-#Integrated
+# Integrated
 def test_perc() -> None:
     input: Tensor = torch.randn(1, 3, 256, 256)
     target: Tensor = torch.randn(1, 3, 256, 256)
@@ -56,6 +57,7 @@ def test_entropy_loss() -> None:
     loss = CrossEntropyLoss(factor = randint)
     result = loss(input=input, target=target)
     assert result is not None, "CrossEntropy failed"
+
 
 def test_psnr() -> None:
     input: Tensor = torch.randn(1, 3, 256, 256)
@@ -171,7 +173,9 @@ def test_fourier1d() -> None:
     assert output.shape == (32, 3, 10), "FourierDeconv1d failed"
 
 def test_fourier3d() -> None:
-    sample_input: Tensor = torch.randn(32, 3, 5, 256, 256)  # batch size, channels, frames, height, width
+    sample_input: Tensor = torch.randn(
+        32, 3, 5, 256, 256
+    )  # batch size, channels, frames, height, width
     model = nn.Sequential(
         FourierConv3d(
             3,
@@ -217,10 +221,13 @@ def test_partial() -> None:
 
 
 def test_normalization() -> None:
-    sample_input: Tensor = torch.randn(32, 20, 10)  # batch size, sequence_length, input_size
+    sample_input: Tensor = torch.randn(
+        32, 20, 10
+    )  # batch size, sequence_length, input_size
     norm = RootMeanSquaredNormalization(dim=10)
     output = norm(sample_input)
     assert output.shape == (32, 20, 10), "RootMeanSquaredNormalization failed"
+
 
 # Integrated
 def test_monte_carlo() -> None:
@@ -232,11 +239,10 @@ def test_monte_carlo() -> None:
             activations=(nn.ReLU, nn.ReLU, nn.Sigmoid)
         ),
         dropout=0.5,
-        n_sampling=50
+        n_sampling=50,
     )
     output = model(sample_input)
     assert output.shape == (32, 1), "MonteCarloFC failed"
-
 
 
 def test_kan() -> None:

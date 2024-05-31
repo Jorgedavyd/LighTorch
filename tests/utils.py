@@ -5,6 +5,7 @@ from lightning.pytorch import LightningDataModule
 from torch.utils.data import Dataset, DataLoader
 import random
 
+
 def create_inputs(*size) -> Tensor:
     return torch.randn(*size)
 
@@ -51,6 +52,7 @@ class DataModule(LightningDataModule):
             num_workers=self.num_workers,
             pin_memory=self.pin_memory,
         )
+
 
 def create_mask():
     # Create a rectangle
