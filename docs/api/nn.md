@@ -253,8 +253,8 @@ sample_input: Tensor = torch.randn(32, 10) # batch size, input_size
 model = MonteCarloFC(
     fc_layer = DeepNeuralNetwork(
         in_features = 10,
-        (20, 20, 1),
-        (nn.ReLU(), nn.ReLU(), nn.Sigmoid())
+        layers = (20, 20, 1),
+        activations = (nn.ReLU(), nn.ReLU(), nn.Sigmoid())
     ),
     dropout = 0.5,
     n_sampling = 50
@@ -274,7 +274,7 @@ sample_input: Tensor = torch.randn(32, 20, 10) # batch size, sequence_length, in
 
 norm = RootMeanSquaredNormalization(dim = 10)
 
-model(sample_input) #-> output (32, 20, 10)
+norm(sample_input) #-> output (32, 20, 10)
 
 ```
 
@@ -295,7 +295,7 @@ from lightorch.nn.partial import PartialConv2d
 from torch import nn, Tensor
 
 sample_input: Tensor = torch.randn(32, 3, 256, 256) # batch size, channels, height, width
-mask_in: Tensor = sample_input()
+mask_in: Tensor = ...
 
 model = nn.Sequential(
     PartialConv2d(in_channels = 3, out_channels = 5, 3, 1, 1),

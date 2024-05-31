@@ -5,16 +5,17 @@ import torch
 from torch.nn import init
 from math import sqrt
 import torch.nn.functional as f
-from typing import Tuple
-
+from typing import Tuple, Sequence
+from itertools import chain
 
 class _FourierConvNd(nn.Module):
     def __init__(
         self,
+        n: int,
         in_channels: int,
         out_channels: int,
-        *kernel_size,
-        padding: Tuple[int],
+        kernel_size: Tuple[int, ...] | int,
+        padding: Tuple[int, ...] | int,
         bias: bool = True,
         eps: float = 1e-5,
         pre_fft: bool = True,
@@ -22,16 +23,21 @@ class _FourierConvNd(nn.Module):
         device=None,
         dtype=None,
     ) -> None:
-        super().__init__()
+        self.n = n
+        if isinstance(kernel_size, tuple):
+            assert (n == n), f'Not valid kernel size for {n}-convolution'
+        else:
+            kernel_size = (kernel_size, )*n
 
+        super().__init__()
         self.factory_kwargs = {"device": device, "dtype": dtype}
-        self.padding = padding
+        self.padding = self.get_padding(padding)
         if pre_fft:
-            self.fft = lambda x: fftn(x, dim=(-i for i in range(1, len(kernel_size))))
+            self.fft = lambda x: fftn(x, dim=(-i for i in range(1, n + 1)))
         else:
             self.fft = False
         if post_ifft:
-            self.ifft = lambda x: ifftn(x, dim=(-i for i in range(1, len(kernel_size))))
+            self.ifft = lambda x: ifftn(x, dim=(-i for i in range(1, n + 1)))
         else:
             self.ifft = False
 
@@ -51,12 +57,19 @@ class _FourierConvNd(nn.Module):
             self.bias = None
 
         self._init_parameters()
-        self._fourier_space(len(kernel_size))
-
-    def _fourier_space(self, dims: int) -> Tensor:
+    
+    def get_padding(self, padding: Tuple[int, ...] | int) -> Sequence[int]:
+        if isinstance(padding, tuple):
+            assert(len(padding) == self.n), f'Not valid padding scheme for {self.n}-convolution'
+            return tuple(*chain.from_iterable([(i, )*2 for i in reversed(padding)]))
+        else:
+            return tuple(*chain.from_iterable([(padding, )*2 for _ in range(self.n)]))
+        
+    def _fourier_space(self) -> Tensor:
+        # probably deprecated
         if self.bias is not None:
-            self.bias = self.fft(self.bias, dim=(-i for i in range(1, dims)))
-        self.weight = self.fft(self.weight, dim=(-i for i in range(1, dims)))
+            self.bias = self.fft(self.bias, dim=(-i for i in range(1, self.n + 1)))
+        self.weight = self.fft(self.weight, dim=(-i for i in range(1, self.n + 1)))
 
     def _init_parameters(self) -> None:
         init.kaiming_uniform_(self.weight, a=sqrt(5))
@@ -68,34 +81,13 @@ class _FourierConvNd(nn.Module):
 
 
 class _FourierDeconvNd(_FourierConvNd):
-    def __init__(
-        self,
-        in_channels: int,
-        out_channels: int,
-        *kernel_size,
-        bias: bool = True,
-        eps: float = 0.00001,
-        pre_fft: bool = True,
-        post_ifft: bool = False,
-        device=None,
-        dtype=None,
-    ) -> None:
-        super().__init__(
-            in_channels,
-            out_channels,
-            *kernel_size,
-            bias=bias,
-            eps=eps,
-            pre_fft=pre_fft,
-            post_ifft=post_ifft,
-            device=device,
-            dtype=dtype,
-        )
+    def __init__(self, n: int, in_channels: int, out_channels: int, kernel_size: Tuple[int] | int, padding: Tuple[int], bias: bool = True, eps: float = 0.00001, pre_fft: bool = True, post_ifft: bool = False, device=None, dtype=None) -> None:
+        super().__init__(n, in_channels, out_channels, kernel_size, padding, bias, eps, pre_fft, post_ifft, device, dtype)
 
 
 class FourierConv1d(_FourierConvNd):
     def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
+        super().__init__(1, *args, **kwargs)
 
     def forward(self, input: Tensor) -> Tensor:
         if self.fft:
@@ -107,7 +99,7 @@ class FourierConv1d(_FourierConvNd):
                 f.pad(input, self.padding, mode="constant", value=0),
                 self.one,
                 self.weight,
-                self.bias,
+                self.bias
             )
         if self.ifft:
             return self.ifft(out)
@@ -116,7 +108,7 @@ class FourierConv1d(_FourierConvNd):
 
 class FourierConv2d(_FourierConvNd):
     def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
+        super().__init__(2, *args, **kwargs)
 
     def forward(self, input: Tensor) -> Tensor:
         if self.fft:
@@ -128,7 +120,7 @@ class FourierConv2d(_FourierConvNd):
                 f.pad(input, self.padding, "constant", value=0),
                 self.one,
                 self.weight,
-                self.bias,
+                self.bias
             )
 
         if self.ifft:
@@ -138,7 +130,7 @@ class FourierConv2d(_FourierConvNd):
 
 class FourierConv3d(_FourierConvNd):
     def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
+        super().__init__(3, *args, **kwargs)
 
     def forward(self, input: Tensor) -> Tensor:
         if self.fft:
@@ -150,7 +142,7 @@ class FourierConv3d(_FourierConvNd):
                 f.pad(input, self.padding, "constant", value=0),
                 self.one,
                 self.weight,
-                self.bias,
+                self.bias
             )
         if self.ifft:
             return self.ifft(out)
@@ -159,7 +151,7 @@ class FourierConv3d(_FourierConvNd):
 
 class FourierDeconv1d(_FourierDeconvNd):
     def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
+        super().__init__(1, *args, **kwargs)
 
     def forward(self, input: Tensor) -> Tensor:
         if self.fft:
@@ -171,7 +163,7 @@ class FourierDeconv1d(_FourierDeconvNd):
                 f.pad(input, self.padding, "constant", value=0),
                 self.one,
                 self.weight,
-                self.bias,
+                self.bias
             )
         if self.ifft:
             return self.ifft(out)
@@ -180,7 +172,7 @@ class FourierDeconv1d(_FourierDeconvNd):
 
 class FourierDeconv2d(_FourierDeconvNd):
     def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
+        super().__init__(2, *args, **kwargs)
 
     def forward(self, input: Tensor) -> Tensor:
         if self.fft:
@@ -192,7 +184,7 @@ class FourierDeconv2d(_FourierDeconvNd):
                 f.pad(input, self.padding, "constant", value=0),
                 self.one,
                 self.weight,
-                self.bias,
+                self.bias
             )
         if self.ifft:
             return self.ifft(out)
@@ -201,7 +193,7 @@ class FourierDeconv2d(_FourierDeconvNd):
 
 class FourierDeconv3d(_FourierDeconvNd):
     def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
+        super().__init__(3, *args, **kwargs)
 
     def forward(self, input: Tensor) -> Tensor:
         if self.fft:
@@ -213,7 +205,7 @@ class FourierDeconv3d(_FourierDeconvNd):
                 f.pad(input, self.padding, "constant", value=0),
                 self.one,
                 self.weight,
-                self.bias,
+                self.bias
             )
         if self.ifft:
             return self.ifft(out)

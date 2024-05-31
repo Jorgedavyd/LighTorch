@@ -4,26 +4,36 @@ from typing import Optional, Union, Tuple, Callable, List
 import torch.nn.functional as F
 from lightning.pytorch import LightningModule
 from einops import rearrange
+from torch.fft import fftn
 
 
-def _fourierconvNd(x: Tensor, weight: Tensor, bias: Tensor | None) -> Tensor:
+def _fourierconvNd(
+    n: int, x: Tensor, weight: Tensor, bias: Tensor | None, eps: float = 1e-5
+) -> Tensor:
+    # To fourier space
+    weight = fftn(weight, dim = (-i for i in range(1, n+1)))
+    
     # weight -> 1, 1, out channels, *kernel_size
-    x *= weight.reshape(1, 1, *weight.shape)  # Convolution in the fourier space
+    x *= weight.reshape(1, 1, *weight.shape) + eps  # Convolution in the fourier space
 
     if bias is not None:
-        return x + bias.reshape(1, 1, -1, 1, 1)
+        bias = fftn(bias, dim = (-i for i in range(1, n+1)))
+        return x + bias.reshape(1, 1, -1, *[1 for _ in range(n)])
 
     return x
 
-
 def _fourierdeconvNd(
-    x: Tensor, weight: Tensor, bias: Tensor | None, eps: float = 1e-5
+    n: int, x: Tensor, weight: Tensor, bias: Tensor | None, eps: float = 1e-5
 ) -> Tensor:
+    # To fourier space
+    weight = fftn(weight, dim = (-i for i in range(1, n+1)))
+    
     # weight -> 1, 1, out channels, *kernel_size
     x /= weight.reshape(1, 1, *weight.shape) + eps  # Convolution in the fourier space
 
     if bias is not None:
-        return x + bias.reshape(1, 1, -1, 1, 1)
+        bias = fftn(bias, dim = (-i for i in range(1, n+1)))
+        return x + bias.reshape(1, 1, -1, *[1 for _ in range(n)])
 
     return x
 

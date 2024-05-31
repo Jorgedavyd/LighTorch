@@ -3,7 +3,7 @@ import torch
 from torch import Tensor, nn
 from lightning.pytorch import LightningDataModule
 from torch.utils.data import Dataset, DataLoader
-
+import random
 
 def create_inputs(*size) -> Tensor:
     return torch.randn(*size)
@@ -51,3 +51,17 @@ class DataModule(LightningDataModule):
             num_workers=self.num_workers,
             pin_memory=self.pin_memory,
         )
+
+def create_mask():
+    # Create a rectangle
+    n = random.randint(1, 31)  # Random integer for n
+    m = random.randint(1, 31)  # Random integer for m
+    left = random.randint(0, 32 - n) * 32  # Ensure multiple of 32
+    top = random.randint(0, 32 - m) * 32  # Ensure multiple of 32
+    width = n * 32
+    height = m * 32
+
+    mask = torch.ones(256, 256)
+    mask[top : top + height, left : left + width] = 0
+
+    return mask
