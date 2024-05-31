@@ -22,8 +22,9 @@ class DeepNeuralNetwork(nn.Sequential):
         self,
         in_features: int,
         layers: Sequence[int],
-        activations: Sequence[nn.Module, None],
+        activations: Sequence[nn.Module | None],
     ):
+        super().__init__()
         assert len(layers) == len(
             activations
         ), "Must have the same amount of layers and activation functions"

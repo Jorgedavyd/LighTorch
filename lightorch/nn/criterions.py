@@ -19,8 +19,9 @@ class LighTorchLoss(nn.Module):
         factors: Dict[str, float] | Sequence[Dict[str, float]],
     ) -> None:
         super().__init__()
+        self.labels = labels
         if "Overall" not in labels:
-            self.labels = labels.append("Overall")
+            self.labels.append("Overall")
         self.factors = factors
 
 
@@ -30,35 +31,38 @@ class Loss(LighTorchLoss):
             list(set([*chain.from_iterable([i.labels for i in loss])])),
             _merge_dicts([i.factors for i in loss]),
         )
-        assert len(self.loss) == len(
+        assert len(loss) == len(
             self.factors
         ), "Must have the same length of losses as factors"
         self.loss = loss
 
     def forward(self, **kwargs) -> Tuple[Tensor, ...]:
-        loss = 0
+        loss_ = 0
         out_list = []
 
         for loss in self.loss:
-            loss_, out_ = loss(**kwargs)
-            out_list.append(loss_)
-            loss += out_
+            *loss_arg, out_ = loss(**kwargs)
+            out_list.extend(list(*loss_arg))
+            loss_ += out_
 
-        out_list.append(loss)
+        out_list.append(loss_)
 
-        return tuple(*out_list)
+        out_list = tuple(out_list)
+
+        return out_list
 
 
 class MSELoss(nn.MSELoss):
     def __init__(
         self, size_average=None, reduce=None, reduction: str = "mean", factor: float = 1
     ) -> None:
-        super().__init__(size_average, reduce, reduction)
-        LighTorchLoss.__init__(self, ["MSE"], {"MSE": factor})
+        super(MSELoss, self).__init__(size_average, reduce, reduction)
+        self.factors = {self.__class__.__name__: factor}
+        self.labels = [self.__class__.__name__]
 
-    def forward(self, input: Tensor, target: Tensor) -> Tensor:
-        return super().forward(input, target)
-
+    def forward(self, **kwargs) -> Tensor:
+        out = super().forward(kwargs['input'], kwargs['target'])
+        return out, out*self.factors[self.__class__.__name__]
 
 class CrossEntropyLoss(nn.CrossEntropyLoss):
     def __init__(
@@ -71,13 +75,13 @@ class CrossEntropyLoss(nn.CrossEntropyLoss):
         label_smoothing: float = 0,
         factor: float = 1,
     ) -> None:
-        super().__init__(
-            weight, size_average, ignore_index, reduce, reduction, label_smoothing
-        )
-        LighTorchLoss.__init__(self, ["Cross Entropy"], {"Cross Entropy": factor})
+        super(CrossEntropyLoss, self).__init__(weight, size_average, ignore_index, reduce, reduction, label_smoothing)
+        self.factors = {self.__class__.__name__: factor}
+        self.labels = [self.__class__.__name__]
 
-    def forward(self, input: Tensor, target: Tensor) -> Tensor:
-        return super().forward(input, target)
+    def forward(self, **kwargs) -> Tensor:
+        out = super().forward(kwargs['input'], kwargs['target'])
+        return out, out*self.factors[self.__class__.__name__]
 
 
 class ELBO(LighTorchLoss):
@@ -87,7 +91,7 @@ class ELBO(LighTorchLoss):
     Given a beta parameter, it is converted into a \beta-VAE.
     """
 
-    def __init__(self, beta: float, reconstruction_criterion: nn.Module) -> None:
+    def __init__(self, beta: float, reconstruction_criterion: LighTorchLoss) -> None:
         super().__init__(
             ["KL Divergence"] + reconstruction_criterion.labels,
             {"KL Divergence": beta}.update(reconstruction_criterion.factors),
@@ -100,16 +104,11 @@ class ELBO(LighTorchLoss):
         """
         input, target, logvar, mu
         """
-        L_recons, L_recons_out = self.L_recons(kwargs["input"], kwargs["target"])
+        *L_recons, L_recons_out = self.L_recons(**kwargs)
 
-        L_kl = -0.5 * torch.sum(
-            torch.log(kwargs["logvar"])
-            - 1
-            + kwargs["logvar"]
-            + torch.pow(kwargs["mu"], 2)
-        )
+        L_kl = F.kl_div(kwargs['mu'], kwargs['logvar'])
 
-        return (L_recons, L_kl, L_recons_out + self.beta * L_kl)
+        return (*L_recons, L_kl, L_recons_out + self.beta * L_kl)
 
 
 # Gram matrix based loss
@@ -128,7 +127,7 @@ class StyleLoss(LighTorchLoss):
 
         F_p: List[int] = []
 
-        for feature_layer in self.fe(sample_tensor):
+        for feature_layer in self.feature_extractor(sample_tensor):
             c, h, w = feature_layer.shape[1:]
             F_p.append(c**3 * h * w)
 
@@ -157,7 +156,7 @@ class PerceptualLoss(LighTorchLoss):
         self.feature_extractor = feature_extractor
         N_phi_p: List[int] = []
 
-        for feature_layer in self.fe(sample_tensor):
+        for feature_layer in self.feature_extractor(sample_tensor):
             c, h, w = feature_layer.shape[1:]
             N_phi_p.append(c * h * w)
 
@@ -176,7 +175,7 @@ class PerceptualLoss(LighTorchLoss):
 # pnsr
 
 
-class PeakNoiseSignalRatio(LighTorchLoss):
+class PeakSignalNoiseRatio(LighTorchLoss):
     """
     forward (input, target)
     """
@@ -193,7 +192,7 @@ class PeakNoiseSignalRatio(LighTorchLoss):
 # Total variance
 
 
-class TV(nn.Module):
+class TV(LighTorchLoss):
     """
     # Total Variance (TV)
     forward (input)
@@ -217,39 +216,72 @@ class LagrangianFunctional(LighTorchLoss):
 
     def __init__(
         self,
-        f: Callable[[Tensor, Tensor], Tensor],
-        *g,
-        lambd: Tensor,
-        f_name: Optional[str] = None,
-        g_names: Optional[Sequence[str]] = None,
+        f: LighTorchLoss,
+        g: Sequence[LighTorchLoss],
         **kwargs,
     ) -> None:
-        if f_name is None:
-            f_name = "f"
-        if g_names is None:
-            g_names = [f"g_{i}" for i in range(len(g))]
+        if f_name:=getattr(f, 'labels', False):
+            assert (len(f_name) == 1), 'Not valid f function, should consist on just one criterion.'
+        else:
+            raise ValueError('Not valid constraint, should belong to LighTorchLoss class')
+        
+        g_names: List[str] = []
+        for constraint in g:
+            if g_name:=getattr(constraint, 'labels', False):
+                assert (len(g_name) == 1), 'Not valid constraint function, should consist on just one criterion each.'
+                g_names.append(*g_name)
+            else:
+                raise ValueError('Not valid constraint, should belong to LighTorchLoss class')
+        for func in g:
+            assert list(func.factors.values())[0]<0, 'Not valid factor for g, should be negative'
+
+        f_name = f_name[0]
+
         labels = [f_name, *g_names]
-        super().__init__(labels, {k: v for k, v in zip(labels[1:], lambd)})
+
+        factors = {}
+
+        for idx, func in enumerate([f, *g]):
+            if idx<1:
+                factors.update({
+                    f'f_{func.__class__.__name__}': func.factors[func.__class__.__name__]
+                })
+            else:
+                factors.update({
+                    f'g_{idx}_{func.__class__.__name__}': func.factors[func.__class__.__name__]
+                })
+
+        super().__init__(labels, factors)
+
         if "make_convex" in kwargs:
             self.make_convex = True
-        self.lambd = lambd
+        else:
+            self.make_convex = False
+
         self.g = g
         self.f = f
 
-    def forward(self, out: Tensor, target: Tensor) -> Tensor:
-        return self.f(out, target) - torch.dot(
-            self.lambd, Tensor([func(out, target) for func in self.g])
-        )
+    def forward(self, **kwargs) -> Tensor:
+        g_out_list: List[float] = []
+        g_out_fact: List[float] = []
+        for constraint in self.g:
+            out, out_fact = constraint(**kwargs)
+            g_out_list.append(out)
+            g_out_fact.append(out_fact)
+        
+        f_out, f_fact = self.f(**kwargs)
 
+        return  f_out, *g_out_list, f_fact - sum(g_out_fact)
 
 __all__ = [
     "LagrangianFunctional",
     "ELBO",
     "TV",
-    "PeakNoiseSignalRatio",
+    "PeakSignalNoiseRatio",
     "StyleLoss",
     "PerceptualLoss",
     "Loss",
-    "LighTorchLoss" "MSELoss",
+    "LighTorchLoss",
+    "MSELoss",
     "CrossEntropyLoss",
 ]

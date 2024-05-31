@@ -71,11 +71,11 @@ class FeatureExtractor(nn.Module):
         super().__init__()
         self.model_str: str = model_str
         self.layers = list(map(str, layers))
-        self.model = VALID_MODELS[model_str](weights = VALID_MODELS[model_str][1].IMAGENET1K_V1)
+        self.model = VALID_MODELS[model_str]['model'](weights = VALID_MODELS[model_str]['weights'].IMAGENET1K_V1)
         for param in self.model.parameters():
             param.requires_grad = False
         # Setting the transformation
-        self.transform =  VALID_MODELS[model_str][1].IMAGENET1K_V1.transforms(antialias=True)
+        self.transform =  VALID_MODELS[model_str]['weights'].IMAGENET1K_V1.transforms(antialias=True)
         
     def forward(self, input: Tensor) -> List[Tensor]:
         features = []

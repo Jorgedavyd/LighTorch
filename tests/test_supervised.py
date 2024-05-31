@@ -1,6 +1,6 @@
-from ..lightorch.training.supervised import Module
-from ..lightorch.nn.criterions import PeakNoiseSignalRatio
-from ..lightorch.htuning.optuna import htuning
+from lightorch.training.supervised import Module
+from lightorch.nn.criterions import PeakSignalNoiseRatio
+from lightorch.htuning.optuna import htuning
 from .utils import Model, create_inputs, DataModule
 
 import random
@@ -15,7 +15,7 @@ randint: int = random.randint(-100, 100)
 class SupModel(Module):
     def __init__(self, **hparams) -> None:
         super().__init__(**hparams)
-        self.criterion = PeakNoiseSignalRatio(1, randint)
+        self.criterion = PeakSignalNoiseRatio(1, randint)
         self.model = Model(in_size)
 
     def forward(self, input: Tensor) -> Tensor:
