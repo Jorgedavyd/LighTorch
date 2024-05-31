@@ -61,8 +61,9 @@ class MSELoss(nn.MSELoss):
         self.labels = [self.__class__.__name__]
 
     def forward(self, **kwargs) -> Tensor:
-        out = super().forward(kwargs['input'], kwargs['target'])
-        return out, out*self.factors[self.__class__.__name__]
+        out = super().forward(kwargs["input"], kwargs["target"])
+        return out, out * self.factors[self.__class__.__name__]
+
 
 class CrossEntropyLoss(nn.CrossEntropyLoss):
     def __init__(
@@ -75,13 +76,15 @@ class CrossEntropyLoss(nn.CrossEntropyLoss):
         label_smoothing: float = 0,
         factor: float = 1,
     ) -> None:
-        super(CrossEntropyLoss, self).__init__(weight, size_average, ignore_index, reduce, reduction, label_smoothing)
+        super(CrossEntropyLoss, self).__init__(
+            weight, size_average, ignore_index, reduce, reduction, label_smoothing
+        )
         self.factors = {self.__class__.__name__: factor}
         self.labels = [self.__class__.__name__]
 
     def forward(self, **kwargs) -> Tensor:
-        out = super().forward(kwargs['input'], kwargs['target'])
-        return out, out*self.factors[self.__class__.__name__]
+        out = super().forward(kwargs["input"], kwargs["target"])
+        return out, out * self.factors[self.__class__.__name__]
 
 
 class ELBO(LighTorchLoss):
@@ -106,7 +109,7 @@ class ELBO(LighTorchLoss):
         """
         *L_recons, L_recons_out = self.L_recons(**kwargs)
 
-        L_kl = F.kl_div(kwargs['mu'], kwargs['logvar'])
+        L_kl = F.kl_div(kwargs["mu"], kwargs["logvar"])
 
         return (*L_recons, L_kl, L_recons_out + self.beta * L_kl)
 
@@ -220,20 +223,30 @@ class LagrangianFunctional(LighTorchLoss):
         g: Sequence[LighTorchLoss],
         **kwargs,
     ) -> None:
-        if f_name:=getattr(f, 'labels', False):
-            assert (len(f_name) == 1), 'Not valid f function, should consist on just one criterion.'
+        if f_name := getattr(f, "labels", False):
+            assert (
+                len(f_name) == 1
+            ), "Not valid f function, should consist on just one criterion."
         else:
-            raise ValueError('Not valid constraint, should belong to LighTorchLoss class')
-        
+            raise ValueError(
+                "Not valid constraint, should belong to LighTorchLoss class"
+            )
+
         g_names: List[str] = []
         for constraint in g:
-            if g_name:=getattr(constraint, 'labels', False):
-                assert (len(g_name) == 1), 'Not valid constraint function, should consist on just one criterion each.'
+            if g_name := getattr(constraint, "labels", False):
+                assert (
+                    len(g_name) == 1
+                ), "Not valid constraint function, should consist on just one criterion each."
                 g_names.append(*g_name)
             else:
-                raise ValueError('Not valid constraint, should belong to LighTorchLoss class')
+                raise ValueError(
+                    "Not valid constraint, should belong to LighTorchLoss class"
+                )
         for func in g:
-            assert list(func.factors.values())[0]<0, 'Not valid factor for g, should be negative'
+            assert (
+                list(func.factors.values())[0] < 0
+            ), "Not valid factor for g, should be negative"
 
         f_name = f_name[0]
 
@@ -242,14 +255,22 @@ class LagrangianFunctional(LighTorchLoss):
         factors = {}
 
         for idx, func in enumerate([f, *g]):
-            if idx<1:
-                factors.update({
-                    f'f_{func.__class__.__name__}': func.factors[func.__class__.__name__]
-                })
+            if idx < 1:
+                factors.update(
+                    {
+                        f"f_{func.__class__.__name__}": func.factors[
+                            func.__class__.__name__
+                        ]
+                    }
+                )
             else:
-                factors.update({
-                    f'g_{idx}_{func.__class__.__name__}': func.factors[func.__class__.__name__]
-                })
+                factors.update(
+                    {
+                        f"g_{idx}_{func.__class__.__name__}": func.factors[
+                            func.__class__.__name__
+                        ]
+                    }
+                )
 
         super().__init__(labels, factors)
 
@@ -268,10 +289,11 @@ class LagrangianFunctional(LighTorchLoss):
             out, out_fact = constraint(**kwargs)
             g_out_list.append(out)
             g_out_fact.append(out_fact)
-        
+
         f_out, f_fact = self.f(**kwargs)
 
-        return  f_out, *g_out_list, f_fact - sum(g_out_fact)
+        return f_out, *g_out_list, f_fact - sum(g_out_fact)
+
 
 __all__ = [
     "LagrangianFunctional",

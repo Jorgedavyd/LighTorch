@@ -10,6 +10,7 @@ torch.manual_seed(42)
 randint: int = random.randint(0, 20)
 assert isinstance(randint, int)
 
+
 def test_complex() -> None:
     sample_input = torch.randn(32, 10) + 1j * torch.randn(32, 10)
     layer = Complex(nn.Linear(10, 20))
@@ -28,7 +29,7 @@ def test_tv() -> None:
 def test_style() -> None:
     input: Tensor = torch.randn(1, 3, 256, 256)
     target: Tensor = torch.randn(1, 3, 256, 256)
-    feature_extractor: nn.Module = FeatureExtractor([8, 12], 'vgg16')
+    feature_extractor: nn.Module = FeatureExtractor([8, 12], "vgg16")
     loss = StyleLoss(feature_extractor, input, randint)
     result = loss(input=input, target=target, feature_extractor=True)
     assert result is not None, "StyleLoss failed"
@@ -38,7 +39,7 @@ def test_style() -> None:
 def test_perc() -> None:
     input: Tensor = torch.randn(1, 3, 256, 256)
     target: Tensor = torch.randn(1, 3, 256, 256)
-    feature: nn.Module = FeatureExtractor([8, 12], 'vgg16')
+    feature: nn.Module = FeatureExtractor([8, 12], "vgg16")
     loss = PerceptualLoss(feature, input, randint)
     result = loss(input=input, target=target, feature_extractor=False)
     assert result is not None, "PerceptualLoss failed"
@@ -47,14 +48,15 @@ def test_perc() -> None:
 def test_mse() -> None:
     input: Tensor = torch.randn(1, 3, 256, 256)
     target: Tensor = torch.randn(1, 3, 256, 256)
-    loss = MSELoss(factor = randint)
+    loss = MSELoss(factor=randint)
     result = loss(input=input, target=target)
     assert result is not None, "MSE failed"
+
 
 def test_entropy_loss() -> None:
     input: Tensor = torch.randn(1, 3, 256, 256).clamp(0, 1)
     target: Tensor = torch.randn(1, 3, 256, 256).clamp(0, 1)
-    loss = CrossEntropyLoss(factor = randint)
+    loss = CrossEntropyLoss(factor=randint)
     result = loss(input=input, target=target)
     assert result is not None, "CrossEntropy failed"
 
@@ -99,18 +101,8 @@ def test_elbo() -> None:
 def test_fourier2d() -> None:
     sample_input: Tensor = torch.randn(32, 3, 256, 256)  # batch size, input_size
     model = nn.Sequential(
-        FourierConv2d(
-            3,
-            5,
-            (8, 8),
-            pre_fft=True
-        ),
-        FourierConv2d(
-            5,
-            3,
-            (8, 8),
-            post_ifft=True
-        )
+        FourierConv2d(3, 5, (8, 8), pre_fft=True),
+        FourierConv2d(5, 3, (8, 8), post_ifft=True),
     )
 
     output = model(sample_input)
@@ -118,101 +110,53 @@ def test_fourier2d() -> None:
     assert output.shape == (32, 3, 256, 256), "FourierConv2d failed"
 
     model = nn.Sequential(
-        FourierDeconv2d(
-            3,
-            5,
-            (8, 8),
-            pre_fft=True
-        ),
-        FourierDeconv2d(
-            5,
-            3,
-            (8, 8),
-            post_ifft=True
-        )
+        FourierDeconv2d(3, 5, (8, 8), pre_fft=True),
+        FourierDeconv2d(5, 3, (8, 8), post_ifft=True),
     )
 
     output = model(sample_input)
     assert output.shape == (32, 3, 256, 256), "FourierDeconv2d failed"
 
+
 def test_fourier1d() -> None:
     sample_input: Tensor = torch.randn(32, 3, 10)  # batch size, channels, input_size
     model = nn.Sequential(
-        FourierConv1d(
-            3,
-            5,
-            2,
-            pre_fft=True
-        ),
-        FourierConv1d(
-            5,
-            3,
-            2,
-            post_ifft=True
-        )
+        FourierConv1d(3, 5, 2, pre_fft=True), FourierConv1d(5, 3, 2, post_ifft=True)
     )
     output = model(sample_input)
     assert output.shape == (32, 3, 10), "FourierConv1d failed"
 
     model = nn.Sequential(
-        FourierDeconv1d(
-            3,
-            5,
-            2,
-            pre_fft=True
-        ),
-        FourierDeconv1d(
-            5,
-            3,
-            2,
-            post_ifft=True
-        )
+        FourierDeconv1d(3, 5, 2, pre_fft=True), FourierDeconv1d(5, 3, 2, post_ifft=True)
     )
     output = model(sample_input)
 
     assert output.shape == (32, 3, 10), "FourierDeconv1d failed"
+
 
 def test_fourier3d() -> None:
     sample_input: Tensor = torch.randn(
         32, 3, 5, 256, 256
     )  # batch size, channels, frames, height, width
     model = nn.Sequential(
-        FourierConv3d(
-            3,
-            5,
-            (1, 8, 8),
-            pre_fft=True
-        ),
-        FourierConv3d(
-            5,
-            3,
-            (1, 8, 8),
-            post_ifft=True
-        )
+        FourierConv3d(3, 5, (1, 8, 8), pre_fft=True),
+        FourierConv3d(5, 3, (1, 8, 8), post_ifft=True),
     )
     output = model(sample_input)
     assert output.shape == (32, 3, 5, 256, 256), "FourierConv3d failed"
 
     model = nn.Sequential(
-        FourierDeconv3d(
-            3,
-            5,
-            (1, 8, 8),
-            pre_fft=True
-        ),
-        FourierDeconv3d(
-            5,
-            3,
-            (1, 8, 8),
-            post_ifft=True
-        )
+        FourierDeconv3d(3, 5, (1, 8, 8), pre_fft=True),
+        FourierDeconv3d(5, 3, (1, 8, 8), post_ifft=True),
     )
     output = model(sample_input)
     assert output.shape == (32, 3, 5, 256, 256), "FourierDeconv3d failed"
 
 
 def test_partial() -> None:
-    sample_input: Tensor = torch.randn(1, 3, 256, 256)  # batch size, channels, height, width
+    sample_input: Tensor = torch.randn(
+        1, 3, 256, 256
+    )  # batch size, channels, height, width
     mask = create_mask().unsqueeze(0).repeat(3, 1, 1).unsqueeze(0)
     model = PartialConv2d(3, 5, 3, 1, 1)
     out, mask = model(sample_input, mask)
@@ -236,7 +180,7 @@ def test_monte_carlo() -> None:
         fc_layer=DeepNeuralNetwork(
             in_features=10,
             layers=(20, 20, 1),
-            activations=(nn.ReLU, nn.ReLU, nn.Sigmoid)
+            activations=(nn.ReLU, nn.ReLU, nn.Sigmoid),
         ),
         dropout=0.5,
         n_sampling=50,

@@ -7,17 +7,15 @@ from einops import rearrange
 from torch.fft import fftn
 
 
-def _fourierconvNd(
-    n: int, x: Tensor, weight: Tensor, bias: Tensor | None
-) -> Tensor:
+def _fourierconvNd(n: int, x: Tensor, weight: Tensor, bias: Tensor | None) -> Tensor:
     # To fourier space
-    weight = fftn(weight, dim = [-i for i in range(1, n+1)])
-    
+    weight = fftn(weight, dim=[-i for i in range(1, n + 1)])
+
     # weight -> 1, 1, out channels, *kernel_size
     x *= weight  # Convolution in the fourier space
 
     if bias is not None:
-        bias = fftn(bias, dim = -1)
+        bias = fftn(bias, dim=-1)
         return x + bias.reshape(-1, *[1 for _ in range(n)])
 
     return x
@@ -27,13 +25,13 @@ def _fourierdeconvNd(
     n: int, x: Tensor, weight: Tensor, bias: Tensor | None, eps: float = 1e-5
 ) -> Tensor:
     # To fourier space
-    weight = fftn(weight, dim = [-i for i in range(1, n+1)])
-    
+    weight = fftn(weight, dim=[-i for i in range(1, n + 1)])
+
     # weight -> 1, out channels, *kernel_size
     x /= weight + eps  # Convolution in the fourier space
 
     if bias is not None:
-        bias = fftn(bias, dim = -1)
+        bias = fftn(bias, dim=-1)
         return x + bias.reshape(-1, *[1 for _ in range(n)])
 
     return x
@@ -65,7 +63,13 @@ def fourierconv3d(x: Tensor, one: Tensor, weight: Tensor, bias: Tensor | None):
 
     out = _fourierconvNd(3, out, weight, bias)
 
-    out = rearrange(out, "B (f h w) C kd kh kw -> B C (f kd) (h kh) (w kw)", f = int(input_shape[-3]/weight_shape[-3]), h = int(input_shape[-2]/weight_shape[-2]), w = int(input_shape[-1]/weight_shape[-1]))
+    out = rearrange(
+        out,
+        "B (f h w) C kd kh kw -> B C (f kd) (h kh) (w kw)",
+        f=int(input_shape[-3] / weight_shape[-3]),
+        h=int(input_shape[-2] / weight_shape[-2]),
+        w=int(input_shape[-1] / weight_shape[-1]),
+    )
 
     return out
 
@@ -80,7 +84,7 @@ def fourierconv2d(x: Tensor, one: Tensor, weight: Tensor, bias: Tensor | None):
     if one is not None:
         # Augment the channel dimension of the input
         out = F.conv2d(x, one, None, 1)  # one: (out_channel, in_channel, *kernel_size)
-    
+
     input_shape = x.shape
     weight_shape = weight.shape
 
@@ -93,7 +97,12 @@ def fourierconv2d(x: Tensor, one: Tensor, weight: Tensor, bias: Tensor | None):
 
     out = _fourierconvNd(2, out, weight, bias)
 
-    out = rearrange(out, "B (h w) C k1 k2 -> B C (h k1) (w k2)", h = int(input_shape[-2]/weight_shape[-2]), w = int(input_shape[-1]/weight_shape[-1]))
+    out = rearrange(
+        out,
+        "B (h w) C k1 k2 -> B C (h k1) (w k2)",
+        h=int(input_shape[-2] / weight_shape[-2]),
+        w=int(input_shape[-1] / weight_shape[-1]),
+    )
 
     return out
 
@@ -108,9 +117,9 @@ def fourierconv1d(x: Tensor, one: Tensor, weight: Tensor, bias: Tensor | None):
     if one is not None:
         # Augment the channel dimension of the input
         out = F.conv1d(x, one, None, 1)  # one: (out_channel, in_channel, *kernel_size)
-    
+
     weight_shape = weight.shape
-    
+
     out = rearrange(out, "B C (l k) -> B l C k", k=weight_shape[-1])
 
     out = _fourierconvNd(1, out, weight, bias)
@@ -136,7 +145,7 @@ def fourierdeconv3d(
     # Rearrange tensors for Fourier convolution
     input_shape = x.shape
     weight_shape = weight.shape
-    
+
     # Rearrange tensors for Fourier convolution
     out = rearrange(
         out,
@@ -148,7 +157,13 @@ def fourierdeconv3d(
 
     out = _fourierdeconvNd(3, out, weight, bias, eps)
 
-    out = rearrange(out, "B (f h w) C kd kh kw -> B C (f kd) (h kh) (w kw)", f = int(input_shape[-3]/weight_shape[-3]), h = int(input_shape[-2]/weight_shape[-2]), w = int(input_shape[-1]/weight_shape[-1]))
+    out = rearrange(
+        out,
+        "B (f h w) C kd kh kw -> B C (f kd) (h kh) (w kw)",
+        f=int(input_shape[-3] / weight_shape[-3]),
+        h=int(input_shape[-2] / weight_shape[-2]),
+        w=int(input_shape[-1] / weight_shape[-1]),
+    )
 
     return out
 
@@ -178,7 +193,12 @@ def fourierdeconv2d(
 
     out = _fourierdeconvNd(2, out, weight, bias, eps)
 
-    out = rearrange(out, "B (h w) C k1 k2 -> B C (h k1) (w k2)", h = int(input_shape[-2]/weight_shape[-2]), w = int(input_shape[-1]/weight_shape[-1]))
+    out = rearrange(
+        out,
+        "B (h w) C k1 k2 -> B C (h k1) (w k2)",
+        h=int(input_shape[-2] / weight_shape[-2]),
+        w=int(input_shape[-1] / weight_shape[-1]),
+    )
 
     return out
 
@@ -345,7 +365,7 @@ def style_loss(
     else:
         phi_input: Tensor = input
         phi_output: Tensor = target
-        
+
     phi_input: List[Tensor] = change_dim(phi_input)
     phi_output: List[Tensor] = change_dim(phi_output)
 
@@ -364,7 +384,7 @@ def perceptual_loss(
     else:
         phi_input: Tensor = input
         phi_output: Tensor = target
-        
+
     return (
         Tensor(
             [

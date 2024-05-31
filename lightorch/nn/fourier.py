@@ -32,12 +32,12 @@ class _FourierConvNd(nn.Module):
 
         super().__init__()
         self.factory_kwargs = {"device": device, "dtype": dtype}
-        
+
         if padding is not None:
             self.padding = self.get_padding(padding)
         else:
             self.padding = padding
-                
+
         if pre_fft:
             self.fft = lambda x: fftn(x, dim=[-i for i in range(1, n + 1)])
         else:
@@ -50,7 +50,9 @@ class _FourierConvNd(nn.Module):
         if out_channels == in_channels:
             self.one = None
         else:
-            self.one = torch.ones(out_channels, in_channels, *[1 for _ in range(n)]) + 1j * 0
+            self.one = (
+                torch.ones(out_channels, in_channels, *[1 for _ in range(n)]) + 1j * 0
+            )
 
         self.eps = eps
         self.weight = nn.Parameter(
@@ -66,11 +68,13 @@ class _FourierConvNd(nn.Module):
 
     def get_padding(self, padding: Tuple[int, ...] | int) -> Sequence[int]:
         if isinstance(padding, tuple):
-            assert(len(padding) == self.n), f'Not valid padding scheme for {self.n}-convolution'
-            return [*chain.from_iterable([(i, )*2 for i in reversed(padding)])]
+            assert (
+                len(padding) == self.n
+            ), f"Not valid padding scheme for {self.n}-convolution"
+            return [*chain.from_iterable([(i,) * 2 for i in reversed(padding)])]
         else:
-            return [*chain.from_iterable([(padding, )*2 for _ in range(self.n)])]
-        
+            return [*chain.from_iterable([(padding,) * 2 for _ in range(self.n)])]
+
     def _fourier_space(self) -> Tensor:
         # probably deprecated
         if self.bias is not None:
@@ -117,8 +121,32 @@ class _FourierDeconvNd(_FourierConvNd):
 
 
 class FourierConv1d(_FourierConvNd):
-    def __init__(self, in_channels: int, out_channels: int, kernel_size: Tuple[int] | int, padding: Tuple[int] | int = None, bias: bool = True, eps: float = 0.00001, pre_fft: bool = True, post_ifft: bool = False, device=None, dtype=None) -> None:
-        super().__init__(1, in_channels, out_channels, kernel_size, padding, bias, eps, pre_fft, post_ifft, device, dtype)
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        kernel_size: Tuple[int] | int,
+        padding: Tuple[int] | int = None,
+        bias: bool = True,
+        eps: float = 0.00001,
+        pre_fft: bool = True,
+        post_ifft: bool = False,
+        device=None,
+        dtype=None,
+    ) -> None:
+        super().__init__(
+            1,
+            in_channels,
+            out_channels,
+            kernel_size,
+            padding,
+            bias,
+            eps,
+            pre_fft,
+            post_ifft,
+            device,
+            dtype,
+        )
 
     def forward(self, input: Tensor) -> Tensor:
         if self.fft:
@@ -138,8 +166,33 @@ class FourierConv1d(_FourierConvNd):
 
 
 class FourierConv2d(_FourierConvNd):
-    def __init__(self, in_channels: int, out_channels: int, kernel_size: Tuple[int] | int,padding: Tuple[int] | int = None, bias: bool = True, eps: float = 0.00001, pre_fft: bool = True, post_ifft: bool = False, device=None, dtype=None) -> None:
-        super().__init__(2, in_channels, out_channels, kernel_size, padding, bias, eps, pre_fft, post_ifft, device, dtype)
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        kernel_size: Tuple[int] | int,
+        padding: Tuple[int] | int = None,
+        bias: bool = True,
+        eps: float = 0.00001,
+        pre_fft: bool = True,
+        post_ifft: bool = False,
+        device=None,
+        dtype=None,
+    ) -> None:
+        super().__init__(
+            2,
+            in_channels,
+            out_channels,
+            kernel_size,
+            padding,
+            bias,
+            eps,
+            pre_fft,
+            post_ifft,
+            device,
+            dtype,
+        )
+
     def forward(self, input: Tensor) -> Tensor:
         if self.fft:
             input = self.fft(input)
@@ -159,13 +212,37 @@ class FourierConv2d(_FourierConvNd):
 
 
 class FourierConv3d(_FourierConvNd):
-    def __init__(self, in_channels: int, out_channels: int, kernel_size: Tuple[int] | int,padding: Tuple[int] | int = None, bias: bool = True, eps: float = 0.00001, pre_fft: bool = True, post_ifft: bool = False, device=None, dtype=None) -> None:
-        super().__init__(3, in_channels, out_channels, kernel_size, padding, bias, eps, pre_fft, post_ifft, device, dtype)
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        kernel_size: Tuple[int] | int,
+        padding: Tuple[int] | int = None,
+        bias: bool = True,
+        eps: float = 0.00001,
+        pre_fft: bool = True,
+        post_ifft: bool = False,
+        device=None,
+        dtype=None,
+    ) -> None:
+        super().__init__(
+            3,
+            in_channels,
+            out_channels,
+            kernel_size,
+            padding,
+            bias,
+            eps,
+            pre_fft,
+            post_ifft,
+            device,
+            dtype,
+        )
 
     def forward(self, input: Tensor) -> Tensor:
         if self.fft:
             input = self.fft(input)
-        
+
         if self.padding is not None:
             out = F.fourierconv3d(
                 f.pad(input, self.padding, "constant", value=0),
@@ -175,15 +252,39 @@ class FourierConv3d(_FourierConvNd):
             )
         else:
             out = F.fourierconv3d(input, self.one, self.weight, self.bias)
-        
+
         if self.ifft:
             return self.ifft(out)
         return out
 
 
 class FourierDeconv1d(_FourierDeconvNd):
-    def __init__(self, in_channels: int, out_channels: int, kernel_size: Tuple[int] | int, padding: Tuple[int] | int = None, bias: bool = True, eps: float = 0.00001, pre_fft: bool = True, post_ifft: bool = False, device=None, dtype=None) -> None:
-        super().__init__(1, in_channels, out_channels, kernel_size, padding, bias, eps, pre_fft, post_ifft, device, dtype)
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        kernel_size: Tuple[int] | int,
+        padding: Tuple[int] | int = None,
+        bias: bool = True,
+        eps: float = 0.00001,
+        pre_fft: bool = True,
+        post_ifft: bool = False,
+        device=None,
+        dtype=None,
+    ) -> None:
+        super().__init__(
+            1,
+            in_channels,
+            out_channels,
+            kernel_size,
+            padding,
+            bias,
+            eps,
+            pre_fft,
+            post_ifft,
+            device,
+            dtype,
+        )
 
     def forward(self, input: Tensor) -> Tensor:
         if self.fft:
@@ -203,8 +304,32 @@ class FourierDeconv1d(_FourierDeconvNd):
 
 
 class FourierDeconv2d(_FourierDeconvNd):
-    def __init__(self, in_channels: int, out_channels: int, kernel_size: Tuple[int] | int, padding: Tuple[int] | int = None, bias: bool = True, eps: float = 0.00001, pre_fft: bool = True, post_ifft: bool = False, device=None, dtype=None) -> None:
-        super().__init__(2, in_channels, out_channels, kernel_size, padding, bias, eps, pre_fft, post_ifft, device, dtype)
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        kernel_size: Tuple[int] | int,
+        padding: Tuple[int] | int = None,
+        bias: bool = True,
+        eps: float = 0.00001,
+        pre_fft: bool = True,
+        post_ifft: bool = False,
+        device=None,
+        dtype=None,
+    ) -> None:
+        super().__init__(
+            2,
+            in_channels,
+            out_channels,
+            kernel_size,
+            padding,
+            bias,
+            eps,
+            pre_fft,
+            post_ifft,
+            device,
+            dtype,
+        )
 
     def forward(self, input: Tensor) -> Tensor:
         if self.fft:
@@ -224,8 +349,32 @@ class FourierDeconv2d(_FourierDeconvNd):
 
 
 class FourierDeconv3d(_FourierDeconvNd):
-    def __init__(self, in_channels: int, out_channels: int, kernel_size: Tuple[int] | int, padding: Tuple[int] | int = None, bias: bool = True, eps: float = 0.00001, pre_fft: bool = True, post_ifft: bool = False, device=None, dtype=None) -> None:
-        super().__init__(3, in_channels, out_channels, kernel_size, padding, bias, eps, pre_fft, post_ifft, device, dtype)
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        kernel_size: Tuple[int] | int,
+        padding: Tuple[int] | int = None,
+        bias: bool = True,
+        eps: float = 0.00001,
+        pre_fft: bool = True,
+        post_ifft: bool = False,
+        device=None,
+        dtype=None,
+    ) -> None:
+        super().__init__(
+            3,
+            in_channels,
+            out_channels,
+            kernel_size,
+            padding,
+            bias,
+            eps,
+            pre_fft,
+            post_ifft,
+            device,
+            dtype,
+        )
 
     def forward(self, input: Tensor) -> Tensor:
         if self.fft:
