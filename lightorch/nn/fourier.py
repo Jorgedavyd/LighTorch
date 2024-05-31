@@ -8,6 +8,7 @@ import torch.nn.functional as f
 from typing import Tuple, Sequence
 from itertools import chain
 
+
 class _FourierConvNd(nn.Module):
     def __init__(
         self,
@@ -25,9 +26,9 @@ class _FourierConvNd(nn.Module):
     ) -> None:
         self.n = n
         if isinstance(kernel_size, tuple):
-            assert (n == n), f'Not valid kernel size for {n}-convolution'
+            assert n == n, f"Not valid kernel size for {n}-convolution"
         else:
-            kernel_size = (kernel_size, )*n
+            kernel_size = (kernel_size,) * n
 
         super().__init__()
         self.factory_kwargs = {"device": device, "dtype": dtype}
@@ -57,14 +58,16 @@ class _FourierConvNd(nn.Module):
             self.bias = None
 
         self._init_parameters()
-    
+
     def get_padding(self, padding: Tuple[int, ...] | int) -> Sequence[int]:
         if isinstance(padding, tuple):
-            assert(len(padding) == self.n), f'Not valid padding scheme for {self.n}-convolution'
-            return tuple(*chain.from_iterable([(i, )*2 for i in reversed(padding)]))
+            assert (
+                len(padding) == self.n
+            ), f"Not valid padding scheme for {self.n}-convolution"
+            return tuple(*chain.from_iterable([(i,) * 2 for i in reversed(padding)]))
         else:
-            return tuple(*chain.from_iterable([(padding, )*2 for _ in range(self.n)]))
-        
+            return tuple(*chain.from_iterable([(padding,) * 2 for _ in range(self.n)]))
+
     def _fourier_space(self) -> Tensor:
         # probably deprecated
         if self.bias is not None:
@@ -81,8 +84,33 @@ class _FourierConvNd(nn.Module):
 
 
 class _FourierDeconvNd(_FourierConvNd):
-    def __init__(self, n: int, in_channels: int, out_channels: int, kernel_size: Tuple[int] | int, padding: Tuple[int], bias: bool = True, eps: float = 0.00001, pre_fft: bool = True, post_ifft: bool = False, device=None, dtype=None) -> None:
-        super().__init__(n, in_channels, out_channels, kernel_size, padding, bias, eps, pre_fft, post_ifft, device, dtype)
+    def __init__(
+        self,
+        n: int,
+        in_channels: int,
+        out_channels: int,
+        kernel_size: Tuple[int] | int,
+        padding: Tuple[int],
+        bias: bool = True,
+        eps: float = 0.00001,
+        pre_fft: bool = True,
+        post_ifft: bool = False,
+        device=None,
+        dtype=None,
+    ) -> None:
+        super().__init__(
+            n,
+            in_channels,
+            out_channels,
+            kernel_size,
+            padding,
+            bias,
+            eps,
+            pre_fft,
+            post_ifft,
+            device,
+            dtype,
+        )
 
 
 class FourierConv1d(_FourierConvNd):
@@ -99,7 +127,7 @@ class FourierConv1d(_FourierConvNd):
                 f.pad(input, self.padding, mode="constant", value=0),
                 self.one,
                 self.weight,
-                self.bias
+                self.bias,
             )
         if self.ifft:
             return self.ifft(out)
@@ -120,7 +148,7 @@ class FourierConv2d(_FourierConvNd):
                 f.pad(input, self.padding, "constant", value=0),
                 self.one,
                 self.weight,
-                self.bias
+                self.bias,
             )
 
         if self.ifft:
@@ -142,7 +170,7 @@ class FourierConv3d(_FourierConvNd):
                 f.pad(input, self.padding, "constant", value=0),
                 self.one,
                 self.weight,
-                self.bias
+                self.bias,
             )
         if self.ifft:
             return self.ifft(out)
@@ -163,7 +191,7 @@ class FourierDeconv1d(_FourierDeconvNd):
                 f.pad(input, self.padding, "constant", value=0),
                 self.one,
                 self.weight,
-                self.bias
+                self.bias,
             )
         if self.ifft:
             return self.ifft(out)
@@ -184,7 +212,7 @@ class FourierDeconv2d(_FourierDeconvNd):
                 f.pad(input, self.padding, "constant", value=0),
                 self.one,
                 self.weight,
-                self.bias
+                self.bias,
             )
         if self.ifft:
             return self.ifft(out)
@@ -205,7 +233,7 @@ class FourierDeconv3d(_FourierDeconvNd):
                 f.pad(input, self.padding, "constant", value=0),
                 self.one,
                 self.weight,
-                self.bias
+                self.bias,
             )
         if self.ifft:
             return self.ifft(out)
