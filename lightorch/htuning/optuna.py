@@ -43,13 +43,20 @@ def htuning(
         trainer.fit(model, datamodule=dataset)
 
         if isinstance(valid_metrics, str):
-            return trainer.callback_metrics[valid_metrics].item()
-
-        return (
-            trainer.callback_metrics[valid_metric].item()
-            for valid_metric in valid_metrics
-        )
-
+            if valid_metrics == 'hp_metric':
+                return trainer.callback_metrics[valid_metrics].item()
+            return trainer.callback_metrics[f'Training/{valid_metrics}'].item()
+        
+        else:
+            out = []
+            for valid_metric in valid_metrics:
+                if valid_metric == 'hp_metric':
+                    out.append(trainer.callback_metrics[valid_metric].item())
+                else:
+                    out.append(trainer.callback_metrics[f'Training/{valid_metric}'].item())
+            
+            return out
+        
     if "precision" in kwargs:
         torch.set_float32_matmul_precision(precision)
     else:

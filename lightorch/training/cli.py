@@ -1,6 +1,5 @@
-from lightning.pytorch import LightningDataModule
-import torch
 from lightning.pytorch.cli import LightningCLI
+import torch
 
 
 def trainer(
@@ -15,6 +14,7 @@ def trainer(
         trainer_defaults={
             "deterministic": deterministic,
         },
+
     )
 
 

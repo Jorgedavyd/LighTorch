@@ -27,13 +27,11 @@ class LighTorchLoss(nn.Module):
 
 class Loss(LighTorchLoss):
     def __init__(self, *loss) -> None:
+        assert (len(set(map(type, loss))) == len(loss)), 'Not valid input classes, each should be different.'
         super().__init__(
             list(set([*chain.from_iterable([i.labels for i in loss])])),
             _merge_dicts([i.factors for i in loss]),
         )
-        assert len(loss) == len(
-            self.factors
-        ), "Must have the same length of losses as factors"
         self.loss = loss
 
     def forward(self, **kwargs) -> Tuple[Tensor, ...]:
@@ -41,9 +39,9 @@ class Loss(LighTorchLoss):
         out_list = []
 
         for loss in self.loss:
-            *loss_arg, out_ = loss(**kwargs)
-            out_list.extend(list(*loss_arg))
-            loss_ += out_
+            args = loss(**kwargs)
+            out_list.extend(list(args[:-1]))
+            loss_ += args[-1]
 
         out_list.append(loss_)
 

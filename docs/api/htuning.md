@@ -16,12 +16,12 @@ if __name__ == '__main__':
         model_class = FourierVAE,
         hparam_objective = objective,
         datamodule = NormalModule,
-        valid_metrics = [f"Training/{name}" for name in [
+        valid_metrics = [
             "Pixel",
             "Perceptual",
             "Style",
             "Total variance",
-            "KL Divergence"]],
+            "KL Divergence"],
         directions = ['minimize', 'minimize', 'minimize', 'minimize', 'minimize'],
         precision = 'medium',
         n_trials = 150,

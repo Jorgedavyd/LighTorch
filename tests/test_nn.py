@@ -192,3 +192,5 @@ def test_monte_carlo() -> None:
 def test_kan() -> None:
     # Placeholder for future implementation
     raise NotImplementedError("KAN test not implemented")
+
+# transformers, attention, mlp, etc.

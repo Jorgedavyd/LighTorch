@@ -24,6 +24,10 @@ class Data(Dataset):
         self,
     ) -> None:
         pass
+    def __len__(self) -> int:
+        return 100
+    def __getitem__(self, index) -> Tensor:
+        return torch.randn(10)
 
 
 class DataModule(LightningDataModule):
@@ -31,9 +35,6 @@ class DataModule(LightningDataModule):
         self.batch_size = batch_size
         self.pin_memory = pin_memory
         self.num_workers = num_workers
-
-    def setup(self) -> None:
-        self.train_ds
 
     def train_dataloader(self) -> DataLoader:
         return DataLoader(
