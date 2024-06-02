@@ -12,17 +12,17 @@ jobs:
 
     strategy:
       matrix:
-        python-version: [3.8, 3.9, 3.11, 3.12]
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
         include:
-          - python-version: 3.12
+          - python-version: '3.12'
             commit: false
-          - python-version: 3.8
+          - python-version: '3.8'
             commit: false
-          - python-version: 3.9
+          - python-version: '3.9'
             commit: false
-          - python-version: 3.11
+          - python-version: '3.11'
             commit: false
-          - python-version: 3.10
+          - python-version: '3.10'
             commit: true
 
     steps:
