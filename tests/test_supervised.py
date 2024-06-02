@@ -1,6 +1,6 @@
 from lightorch.training.supervised import Module
 from lightorch.nn.criterions import MSELoss
-from lightorch.htuning.optuna import htuning
+from lightorch.htuning import htuning
 from .utils import create_inputs, DataModule
 from torch import nn
 import optuna
