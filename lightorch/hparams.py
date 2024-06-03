@@ -2,7 +2,7 @@ import optuna
 import torch
 
 from lightning.pytorch import LightningDataModule, LightningModule
-from typing import Sequence, Callable, Dict, Any
+from typing import Sequence, Callable, Dict, Any, Union
 from lightning.pytorch.trainer import Trainer
 
 
@@ -15,7 +15,7 @@ def htuning(
     datamodule_kwargs: Dict[str, Any] = dict(
         pin_memory=True, num_workers=8, batch_size=6
     ),
-    directions: Sequence[str] | str,
+    directions: Union[Sequence[str], str],
     precision: str,
     n_trials: int,
     trainer_kwargs: Dict[str, Any] = dict(
@@ -30,7 +30,7 @@ def htuning(
         limit_val_batches=1 / 3,
     ),
     **kwargs,
-):
+) -> None:
 
     def objective(trial: optuna.trial.Trial):
 
