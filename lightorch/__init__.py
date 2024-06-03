@@ -1,7 +1,6 @@
 from .hparams import *
 from .nn import *
 from .training import *
-from .deprecated import *
 from ._version import __version__
 from .hparams import *
 
