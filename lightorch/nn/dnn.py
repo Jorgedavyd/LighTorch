@@ -1,6 +1,6 @@
 # Base Deep Neural Network
 from torch import Tensor, nn
-from typing import Sequence
+from typing import Sequence, Union
 
 
 def _SingularLayer(
@@ -22,7 +22,7 @@ class DeepNeuralNetwork(nn.Sequential):
         self,
         in_features: int,
         layers: Sequence[int],
-        activations: Sequence[nn.Module | None],
+        activations: Sequence[Union[nn.Module, None]],
     ):
         super().__init__()
         assert len(layers) == len(

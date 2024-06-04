@@ -1,11 +1,10 @@
-from torch import nn, Tensor
-from . import functional as F
 from torch.fft import fftn, ifftn
+from torch import nn, Tensor, init
+from . import functional as F
 import torch
-from torch.nn import init
 from math import sqrt
 import torch.nn.functional as f
-from typing import Tuple, Sequence
+from typing import Tuple, Sequence, Union
 from itertools import chain
 
 
@@ -15,8 +14,8 @@ class _FourierConvNd(nn.Module):
         n: int,
         in_channels: int,
         out_channels: int,
-        kernel_size: Tuple[int, ...] | int,
-        padding: Tuple[int, ...] | int = None,
+        kernel_size: Union[Tuple[int],int],
+        padding: Union[Tuple[int],int] = None,
         bias: bool = True,
         eps: float = 1e-5,
         pre_fft: bool = True,
@@ -66,7 +65,7 @@ class _FourierConvNd(nn.Module):
 
         self._init_parameters()
 
-    def get_padding(self, padding: Tuple[int, ...] | int) -> Sequence[int]:
+    def get_padding(self, padding: Union[Tuple[int],int]) -> Sequence[int]:
         if isinstance(padding, tuple):
             assert (
                 len(padding) == self.n
@@ -96,7 +95,7 @@ class _FourierDeconvNd(_FourierConvNd):
         n: int,
         in_channels: int,
         out_channels: int,
-        kernel_size: Tuple[int] | int,
+        kernel_size: Union[Tuple[int],int],
         padding: Tuple[int],
         bias: bool = True,
         eps: float = 0.00001,
@@ -125,8 +124,8 @@ class FourierConv1d(_FourierConvNd):
         self,
         in_channels: int,
         out_channels: int,
-        kernel_size: Tuple[int] | int,
-        padding: Tuple[int] | int = None,
+        kernel_size: Union[Tuple[int],int],
+        padding: Union[Tuple[int],int] = None,
         bias: bool = True,
         eps: float = 0.00001,
         pre_fft: bool = True,
@@ -170,8 +169,8 @@ class FourierConv2d(_FourierConvNd):
         self,
         in_channels: int,
         out_channels: int,
-        kernel_size: Tuple[int] | int,
-        padding: Tuple[int] | int = None,
+        kernel_size: Union[Tuple[int],int],
+        padding: Union[Tuple[int],int] = None,
         bias: bool = True,
         eps: float = 0.00001,
         pre_fft: bool = True,
@@ -216,8 +215,8 @@ class FourierConv3d(_FourierConvNd):
         self,
         in_channels: int,
         out_channels: int,
-        kernel_size: Tuple[int] | int,
-        padding: Tuple[int] | int = None,
+        kernel_size: Union[Tuple[int],int],
+        padding: Union[Tuple[int],int] = None,
         bias: bool = True,
         eps: float = 0.00001,
         pre_fft: bool = True,
@@ -263,8 +262,8 @@ class FourierDeconv1d(_FourierDeconvNd):
         self,
         in_channels: int,
         out_channels: int,
-        kernel_size: Tuple[int] | int,
-        padding: Tuple[int] | int = None,
+        kernel_size: Union[Tuple[int],int],
+        padding: Union[Tuple[int],int] = None,
         bias: bool = True,
         eps: float = 0.00001,
         pre_fft: bool = True,
@@ -308,8 +307,8 @@ class FourierDeconv2d(_FourierDeconvNd):
         self,
         in_channels: int,
         out_channels: int,
-        kernel_size: Tuple[int] | int,
-        padding: Tuple[int] | int = None,
+        kernel_size: Union[Tuple[int],int],
+        padding: Union[Tuple[int],int] = None,
         bias: bool = True,
         eps: float = 0.00001,
         pre_fft: bool = True,
@@ -353,8 +352,8 @@ class FourierDeconv3d(_FourierDeconvNd):
         self,
         in_channels: int,
         out_channels: int,
-        kernel_size: Tuple[int] | int,
-        padding: Tuple[int] | int = None,
+        kernel_size: Union[Tuple[int],int],
+        padding: Union[Tuple[int],int] = None,
         bias: bool = True,
         eps: float = 0.00001,
         pre_fft: bool = True,

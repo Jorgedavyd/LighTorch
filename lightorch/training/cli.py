@@ -1,11 +1,12 @@
 from lightning.pytorch.cli import LightningCLI
+from typing import Union
 import torch
 
 
 def trainer(
     matmul_precision: str = "high",
     deterministic: bool = True,
-    seed: bool | int = 123,
+    seed: Union[bool, int] = 123,
 ):
     torch.set_float32_matmul_precision(matmul_precision)
 

@@ -1,6 +1,5 @@
 from torch import nn, Tensor
-from typing import Sequence, Dict, Tuple, Optional, Callable, Sequence, List
-import torch
+from typing import Sequence, Dict, Tuple, Sequence, List, Union
 from . import functional as F
 from itertools import chain
 
@@ -15,8 +14,8 @@ def _merge_dicts(dicts: Sequence[Dict[str, float]]) -> Dict[str, float]:
 class LighTorchLoss(nn.Module):
     def __init__(
         self,
-        labels: Sequence[str] | str,
-        factors: Dict[str, float] | Sequence[Dict[str, float]],
+        labels: Union[Sequence[str], str],
+        factors: Union[Dict[str, float], Sequence[Dict[str, float]]],
     ) -> None:
         super().__init__()
         self.labels = labels
@@ -66,7 +65,7 @@ class MSELoss(nn.MSELoss):
 class CrossEntropyLoss(nn.CrossEntropyLoss):
     def __init__(
         self,
-        weight: Tensor | None = None,
+        weight: Union[Tensor, None] = None,
         size_average=None,
         ignore_index: int = -100,
         reduce=None,

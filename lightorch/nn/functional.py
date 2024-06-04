@@ -5,9 +5,10 @@ import torch.nn.functional as F
 from lightning.pytorch import LightningModule
 from einops import rearrange
 from torch.fft import fftn
+from .utils import FeatureExtractor
 
 
-def _fourierconvNd(n: int, x: Tensor, weight: Tensor, bias: Tensor | None) -> Tensor:
+def _fourierconvNd(n: int, x: Tensor, weight: Tensor, bias: Union[Tensor,None]) -> Tensor:
     # To fourier space
     weight = fftn(weight, dim=[-i for i in range(1, n + 1)])
 
@@ -22,7 +23,7 @@ def _fourierconvNd(n: int, x: Tensor, weight: Tensor, bias: Tensor | None) -> Te
 
 
 def _fourierdeconvNd(
-    n: int, x: Tensor, weight: Tensor, bias: Tensor | None, eps: float = 1e-5
+    n: int, x: Tensor, weight: Tensor, bias: Union[Tensor,None], eps: float = 1e-5
 ) -> Tensor:
     # To fourier space
     weight = fftn(weight, dim=[-i for i in range(1, n + 1)])
@@ -37,7 +38,7 @@ def _fourierdeconvNd(
     return x
 
 
-def fourierconv3d(x: Tensor, one: Tensor, weight: Tensor, bias: Tensor | None):
+def fourierconv3d(x: Tensor, one: Tensor, weight: Tensor, bias: Union[Tensor,None]):
     """
     x (Tensor): batch size, channels, height, width
     weight (Tensor): out channels, *kernel_size
@@ -74,7 +75,7 @@ def fourierconv3d(x: Tensor, one: Tensor, weight: Tensor, bias: Tensor | None):
     return out
 
 
-def fourierconv2d(x: Tensor, one: Tensor, weight: Tensor, bias: Tensor | None):
+def fourierconv2d(x: Tensor, one: Tensor, weight: Tensor, bias: Union[Tensor,None]):
     """
     x (Tensor): batch size, channels, height, width
     weight (Tensor): out channels, *kernel_size
@@ -107,7 +108,7 @@ def fourierconv2d(x: Tensor, one: Tensor, weight: Tensor, bias: Tensor | None):
     return out
 
 
-def fourierconv1d(x: Tensor, one: Tensor, weight: Tensor, bias: Tensor | None):
+def fourierconv1d(x: Tensor, one: Tensor, weight: Tensor, bias: Union[Tensor,None]):
     """
     x (Tensor): batch size, channels, sequence length
     weight (Tensor): out channels, kernel_size
@@ -130,7 +131,7 @@ def fourierconv1d(x: Tensor, one: Tensor, weight: Tensor, bias: Tensor | None):
 
 
 def fourierdeconv3d(
-    x: Tensor, one: Tensor, weight: Tensor, bias: Tensor | None, eps: float = 1e-5
+    x: Tensor, one: Tensor, weight: Tensor, bias: Union[Tensor,None], eps: float = 1e-5
 ):
     """
     x (Tensor): batch size, channels, height, width
@@ -169,7 +170,7 @@ def fourierdeconv3d(
 
 
 def fourierdeconv2d(
-    x: Tensor, one: Tensor, weight: Tensor, bias: Tensor | None, eps: float = 1e-5
+    x: Tensor, one: Tensor, weight: Tensor, bias: Union[Tensor,None], eps: float = 1e-5
 ):
     """
     x (Tensor): batch size, channels, height, width
@@ -204,7 +205,7 @@ def fourierdeconv2d(
 
 
 def fourierdeconv1d(
-    x: Tensor, one: Tensor, weight: Tensor, bias: Tensor | None, eps: float = 1e-5
+    x: Tensor, one: Tensor, weight: Tensor, bias: Union[Tensor,None], eps: float = 1e-5
 ):
     """
     x (Tensor): batch size, channels, sequence length
@@ -236,7 +237,7 @@ def _partialconvnd(
     padding,
     dilation,
     update_mask: bool = True,
-) -> Tuple[Tensor, Tensor] | Tensor:
+) -> Union[Tuple[Tensor, Tensor], Tensor]:
 
     with torch.no_grad():
         sum_m: Tensor = conv(
@@ -357,7 +358,7 @@ def style_loss(
     input: Tensor,
     target: Tensor,
     F_p: Tensor,
-    feature_extractor: nn.Module | LightningModule = None,
+    feature_extractor: FeatureExtractor = None,
 ) -> Tensor:
     if feature_extractor is not None:
         phi_input: Tensor = feature_extractor(input)
@@ -376,7 +377,7 @@ def perceptual_loss(
     input: Tensor,
     target: Tensor,
     N_phi_p: Tensor,
-    feature_extractor: nn.Module | LightningModule = None,
+    feature_extractor: FeatureExtractor = None,
 ) -> Tensor:
     if feature_extractor is not None:
         phi_input: Tensor = feature_extractor(input)

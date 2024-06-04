@@ -193,4 +193,18 @@ def test_kan() -> None:
     # Placeholder for future implementation
     raise NotImplementedError("KAN test not implemented")
 
-# transformers, attention, mlp, etc.
+def test_trans() -> None:
+    # Placeholder for future implementation
+    raise NotImplementedError("Transformer test not implemented")
+
+def test_att() -> None:
+    # Placeholder for future implementation
+    raise NotImplementedError("Attention test not implemented")
+
+def test_ffn() -> None:
+    # Placeholder for future implementation
+    raise NotImplementedError("FFN test not implemented")
+
+def test_pos_embed() -> None:
+    # Placeholder for future implementation
+    raise NotImplementedError("Positional Encoding and Embedding test not implemented")

@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, Union
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 import torch
@@ -7,7 +7,7 @@ from torch import Tensor
 import torchvision
 
 class Module(Module_):
-    def __init__(self, *, optimizer: str | Optimizer, scheduler: str | LRScheduler = None, triggers: Dict[str, Dict[str, float]] = None, optimizer_kwargs: Dict[str, Any] = None, scheduler_kwargs: Dict[str, Any] = None, gradient_clip_algorithm: str = None, gradient_clip_val: float = None) -> None:
+    def __init__(self, *, optimizer: Union[str, Optimizer], scheduler: Union[str, LRScheduler] = None, triggers: Dict[str, Dict[str, float]] = None, optimizer_kwargs: Dict[str, Any] = None, scheduler_kwargs: Dict[str, Any] = None, gradient_clip_algorithm: str = None, gradient_clip_val: float = None) -> None:
         super().__init__(optimizer=optimizer, scheduler=scheduler, triggers=triggers, optimizer_kwargs=optimizer_kwargs, scheduler_kwargs=scheduler_kwargs, gradient_clip_algorithm=gradient_clip_algorithm, gradient_clip_val=gradient_clip_val)
         self.automatic_optimization = False
 
