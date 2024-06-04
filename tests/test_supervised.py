@@ -70,7 +70,7 @@ def test_supervised() -> None:
         datamodule=DataModule,
         valid_metrics="MSE",
         datamodule_kwargs=dict(pin_memory=False, num_workers=1, batch_size=1),
-        directions=["minimize"],
+        directions="minimize",
         precision="high",
         n_trials=10,
         trianer_kwargs=dict(fast_dev_run=True),

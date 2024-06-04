@@ -86,11 +86,7 @@ data: # Dataset arguments
 from lightorch.training.cli import trainer
 
 if __name__ == '__main__':
-    trainer(
-        matmul_precision = 'medium', # default
-        deterministic = True, # default for reproducibility
-        seed = 123, # default for reproducibility
-    )
+    trainer()
 ```
 exec: `python3 -m training -c config.yaml`
 
