@@ -59,8 +59,6 @@ class Module(LightningModule):
             triggers: Dict[str, Dict[str, float]] = None,
             optimizer_kwargs: Dict[str, Any] = None,
             scheduler_kwargs: Dict[str, Any] = None,
-            gradient_clip_algorithm: str = None,
-            gradient_clip_val: float = None,
             **kwargs
         ) -> None:
         super().__init__()
@@ -98,9 +96,6 @@ class Module(LightningModule):
         else:
             assert scheduler_kwargs is None, 'Not valid scheduler_kwargs parameter for NoneType scheduler'
             self.scheduler = None
-
-        self.trainer.gradient_clip_algorithm = gradient_clip_algorithm
-        self.trainer.gradient_clip_val = gradient_clip_val
 
     def loss_forward(self, batch: Tensor, idx: int) -> Dict[str, Union[Tensor, float]]:
         raise NotImplementedError('Should have defined loss_forward method.')
