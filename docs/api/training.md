@@ -79,7 +79,8 @@ trainer: # trainer arguments
 model:
   class_path: utils.FourierVAE #model relative path
   dict_kwargs: #**hparams
-    encoder_lr: 2e-2
+    triggers: 2e-2
+        
     encoder_wd: 0
     decoder_lr: 1e-2
     decoder_wd: 0

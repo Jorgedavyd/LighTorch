@@ -34,7 +34,7 @@ class Loss(LighTorchLoss):
         self.loss = loss
 
     def forward(self, **kwargs) -> Tuple[Tensor, ...]:
-        loss_ = 0
+        loss_ = Tensor([0.0])
         out_list = []
 
         for loss in self.loss:
