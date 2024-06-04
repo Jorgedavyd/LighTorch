@@ -1,5 +1,6 @@
 from torch.fft import fftn, ifftn
-from torch import nn, Tensor, init
+from torch import nn, Tensor
+from torch.nn import init
 from . import functional as F
 import torch
 from math import sqrt
