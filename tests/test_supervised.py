@@ -43,8 +43,6 @@ def objective1(trial: optuna.trial.Trial):
         scheduler_kwargs = dict(
             max_lr = trial.suggest_float('max_lr', 1e-2, 1e-1)
             ),
-        gradient_clip_algorithm = trial.suggest_categorical('clip_mode', ['value', 'norm']),
-        gradient_clip_value = trial.suggest_float('clip_value', 1e-3, 1e-2)
     )
 
 def objective2(trial: optuna.trial.Trial):
@@ -57,9 +55,7 @@ def objective2(trial: optuna.trial.Trial):
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau,
         scheduler_kwargs = dict(
             max_lr = trial.suggest_float('max_lr', 1e-2, 1e-1)
-            ),
-        gradient_clip_algorithm = trial.suggest_categorical('clip_mode', ['value', 'norm']),
-        gradient_clip_value = trial.suggest_float('clip_value', 1e-3, 1e-2)
+            )
     )
 
 
@@ -73,7 +69,7 @@ def test_supervised() -> None:
         directions="minimize",
         precision="high",
         n_trials=10,
-        trianer_kwargs=dict(fast_dev_run=True),
+        trianer_kwargs=dict(fast_dev_run=True, accelerator = 'cpu'),
     )
 
     htuning(
@@ -85,5 +81,5 @@ def test_supervised() -> None:
         directions="minimize",
         precision="medium",
         n_trials=10,
-        trianer_kwargs=dict(fast_dev_run=True),
+        trianer_kwargs=dict(fast_dev_run=True, accelerator = 'cpu'),
     )
