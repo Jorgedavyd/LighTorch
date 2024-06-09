@@ -3,6 +3,7 @@ from torch import Tensor, nn
 import random
 from lightorch.nn import *
 from .utils import *
+import pytest
 
 random.seed(42)
 torch.manual_seed(42)
@@ -189,10 +190,6 @@ def test_monte_carlo() -> None:
     assert output.shape == (32, 1), "MonteCarloFC failed"
 
 
-def test_kan() -> None:
-    # Placeholder for future implementation
-    raise NotImplementedError("KAN test not implemented")
-
 def test_trans() -> None:
     # Placeholder for future implementation
     raise NotImplementedError("Transformer test not implemented")
@@ -201,9 +198,35 @@ def test_att() -> None:
     # Placeholder for future implementation
     raise NotImplementedError("Attention test not implemented")
 
-def test_ffn() -> None:
-    # Placeholder for future implementation
-    raise NotImplementedError("FFN test not implemented")
+
+models_with_params = [
+    (FFN_ReLU, {"in_features": 64, "k_multiplier": 2, "out_features": 128}),
+    (FFN_Bilinear, {"in_features": 64, "k_multiplier": 2, "out_features": 128}),
+    (FFN_Sigmoid, {"in_features": 64, "k_multiplier": 2, "out_features": 128}),
+    (FFN_Swish, {"in_features": 64, "k_multiplier": 2, "out_features": 128}),
+    (FFN_GELU, {"in_features": 64, "k_multiplier": 2, "out_features": 128}),
+    (BiGLU, {"in_features": 64, "out_features": 128}),
+    (GLU, {"in_features": 64, "out_features": 128}),
+    (ReGLU, {"in_features": 64, "out_features": 128}),
+    (GEGLU, {"in_features": 64, "out_features": 128}),
+    (SiGLU, {"in_features": 64, "out_features": 128}),
+    (FFN_SwiGLU, {"in_features": 64, "k_multiplier": 2, "out_features": 128}),
+    (FFN_ReGLU, {"in_features": 64, "k_multiplier": 2, "out_features": 128}),
+    (FFN_GEGLU, {"in_features": 64, "k_multiplier": 2, "out_features": 128}),
+    (FFN_GLU, {"in_features": 64, "k_multiplier": 2, "out_features": 128}),
+]
+
+@pytest.mark.parametrize("model_class, params", models_with_params)
+def test_ffn(model_class, params) -> None:
+    model = model_class(**params)
+    
+    in_features = params['in_features']
+    x = torch.randn(32, in_features)  
+
+    output = model(x)
+
+    out_features = params['out_features']
+    assert output.shape == (32, out_features)
 
 def test_pos_embed() -> None:
     # Placeholder for future implementation

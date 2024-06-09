@@ -98,7 +98,6 @@ exec: `python3 -m training -c config.yaml`
 - Multi-Objective and Single-Objective optimization and Hyperparameter tuning with optuna.
 
 ## Modules
-- KAN: Kolmogorov-Arnold Networks
 - Fourier Convolution.
 - Fourier Deconvolution.
 - Partial Convolution. (Optimized implementation)
