@@ -31,7 +31,7 @@ def test_tv() -> None:
 def test_style() -> None:
     input: Tensor = torch.randn(1, 3, 256, 256)
     target: Tensor = torch.randn(1, 3, 256, 256)
-    feature_extractor: nn.Module = FeatureExtractor([8, 12], "vgg16")
+    feature_extractor: nn.Module = FeatureExtractor2D([8, 12], "vgg16")
     loss = StyleLoss(feature_extractor, input, randint)
     result = loss(input=input, target=target, feature_extractor=True)
     assert result is not None, "StyleLoss failed"
@@ -41,7 +41,7 @@ def test_style() -> None:
 def test_perc() -> None:
     input: Tensor = torch.randn(1, 3, 256, 256)
     target: Tensor = torch.randn(1, 3, 256, 256)
-    feature: nn.Module = FeatureExtractor([8, 12], "vgg16")
+    feature: nn.Module = FeatureExtractor2D([8, 12], "vgg16")
     loss = PerceptualLoss(feature, input, randint)
     result = loss(input=input, target=target, feature_extractor=False)
     assert result is not None, "PerceptualLoss failed"
@@ -377,7 +377,7 @@ def test_ffn(model_class, params) -> None:
     out_features = params['out_features']
     assert output.shape == (32, out_features)
 
-def test_pos_embed() -> None:
+def test_pos() -> None:
     dropout = 0.1
     batch_size = 32
     seq_length = 10
@@ -399,3 +399,36 @@ def test_pos_embed() -> None:
     assert output.shape == input_tensor.shape
     output = dn_pos_enc(input_tensor)
     assert output.shape == input_tensor.shape
+
+def test_patch_embedding_3dcnn():
+    batch_size = 2
+    frames = 8
+    channels = 3
+    height = 32
+    width = 32
+    h_div = 4
+    w_div = 4
+    d_model = 64
+    architecture = (channels,)
+    hidden_activations = (nn.ReLU(),)
+    dropout = 0.1
+
+    input_tensor = torch.randn(batch_size, frames, channels, height, width)
+
+    feature_extractor = FeatureExtractor3D() # Define
+    pe = AbsoluteSinusoidalPositionalEncoding()
+
+    patch_embed = PatchEmbeddding3DCNN(h_div=h_div, w_div=w_div, pe=pe, feature_extractor=feature_extractor, X=input_tensor)
+
+    output = patch_embed(input_tensor)
+
+    assert output.shape == (batch_size, h_div * w_div, d_model)
+    
+    feature_extractor = FeatureExtractor2D()
+    
+    patch_embed = PatchEmbedding2DCNN(d_model=d_model, pe=pe, feature_extractor=feature_extractor, architecture=architecture, hidden_activations=hidden_activations, dropout=dropout)
+
+    output = patch_embed(input_tensor)
+
+    assert output.shape == (batch_size, frames, d_model)
+
