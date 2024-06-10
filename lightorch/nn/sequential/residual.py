@@ -1,9 +1,9 @@
 from torch import nn, Tensor
-from typing import Union, Tuple, Callable, Any
+from typing import Union, Tuple, Callable, Any, Union
 from ..functional import residual_connection
 
 class _Residual(nn.Module):
-    def __init__(self, module: nn.Module | Callable[[int, int], nn.Module], input_size: int, hidden_size: int, n_layers: int):
+    def __init__(self, module: Union[nn.Module, Callable[[int, int], nn.Module]], input_size: int, hidden_size: int, n_layers: int):
         self.model = nn.ModuleList([module(input_size, hidden_size) for _ in range(n_layers)])
     def forward(self, x: Tensor) -> Union[Tuple[Tensor, Tuple[Tensor, Tensor]], Tuple[Tensor, Tensor], Tensor]:
         for layer in self.model:
