@@ -2,6 +2,7 @@ import torch
 from torch import Tensor, nn
 import random
 from lightorch.nn import *
+from lightorch.nn.sequential.residual import *
 from .utils import *
 import pytest
 from datetime import timedelta
@@ -432,3 +433,20 @@ def test_patch_embedding_3dcnn():
 
     assert output.shape == (batch_size, frames, d_model)
 
+def test_res() -> None:
+    input_size = 10
+    sequence_length = 16
+    batch_size = 2
+    hidden_size = 20
+    rnn_layers = 1
+    res_layers = 1
+    shape = (input_size, sequence_length, batch_size)
+    x = torch.randn(*shape) # batch_size, sequence, input_size
+    
+    model = GRU(input_size, hidden_size, rnn_layers, res_layers)
+    out = model(x)
+    assert (out.shape == shape), 'Residual GRU failed'
+    
+    model = LSTM(input_size, hidden_size, rnn_layers, res_layers)
+    out = model(x)
+    assert (out.shape == shape), 'Residual LSTM failed'
