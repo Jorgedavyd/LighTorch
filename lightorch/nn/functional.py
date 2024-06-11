@@ -7,7 +7,9 @@ from torch.fft import fftn
 from .utils import FeatureExtractor2D
 
 
-def _fourierconvNd(n: int, x: Tensor, weight: Tensor, bias: Union[Tensor,None]) -> Tensor:
+def _fourierconvNd(
+    n: int, x: Tensor, weight: Tensor, bias: Union[Tensor, None]
+) -> Tensor:
     # To fourier space
     weight = fftn(weight, dim=[-i for i in range(1, n + 1)])
 
@@ -22,7 +24,7 @@ def _fourierconvNd(n: int, x: Tensor, weight: Tensor, bias: Union[Tensor,None]) 
 
 
 def _fourierdeconvNd(
-    n: int, x: Tensor, weight: Tensor, bias: Union[Tensor,None], eps: float = 1e-5
+    n: int, x: Tensor, weight: Tensor, bias: Union[Tensor, None], eps: float = 1e-5
 ) -> Tensor:
     # To fourier space
     weight = fftn(weight, dim=[-i for i in range(1, n + 1)])
@@ -37,7 +39,7 @@ def _fourierdeconvNd(
     return x
 
 
-def fourierconv3d(x: Tensor, one: Tensor, weight: Tensor, bias: Union[Tensor,None]):
+def fourierconv3d(x: Tensor, one: Tensor, weight: Tensor, bias: Union[Tensor, None]):
     """
     x (Tensor): batch size, channels, height, width
     weight (Tensor): out channels, *kernel_size
@@ -74,7 +76,7 @@ def fourierconv3d(x: Tensor, one: Tensor, weight: Tensor, bias: Union[Tensor,Non
     return out
 
 
-def fourierconv2d(x: Tensor, one: Tensor, weight: Tensor, bias: Union[Tensor,None]):
+def fourierconv2d(x: Tensor, one: Tensor, weight: Tensor, bias: Union[Tensor, None]):
     """
     x (Tensor): batch size, channels, height, width
     weight (Tensor): out channels, *kernel_size
@@ -107,7 +109,7 @@ def fourierconv2d(x: Tensor, one: Tensor, weight: Tensor, bias: Union[Tensor,Non
     return out
 
 
-def fourierconv1d(x: Tensor, one: Tensor, weight: Tensor, bias: Union[Tensor,None]):
+def fourierconv1d(x: Tensor, one: Tensor, weight: Tensor, bias: Union[Tensor, None]):
     """
     x (Tensor): batch size, channels, sequence length
     weight (Tensor): out channels, kernel_size
@@ -130,7 +132,7 @@ def fourierconv1d(x: Tensor, one: Tensor, weight: Tensor, bias: Union[Tensor,Non
 
 
 def fourierdeconv3d(
-    x: Tensor, one: Tensor, weight: Tensor, bias: Union[Tensor,None], eps: float = 1e-5
+    x: Tensor, one: Tensor, weight: Tensor, bias: Union[Tensor, None], eps: float = 1e-5
 ):
     """
     x (Tensor): batch size, channels, height, width
@@ -169,7 +171,7 @@ def fourierdeconv3d(
 
 
 def fourierdeconv2d(
-    x: Tensor, one: Tensor, weight: Tensor, bias: Union[Tensor,None], eps: float = 1e-5
+    x: Tensor, one: Tensor, weight: Tensor, bias: Union[Tensor, None], eps: float = 1e-5
 ):
     """
     x (Tensor): batch size, channels, height, width
@@ -204,7 +206,7 @@ def fourierdeconv2d(
 
 
 def fourierdeconv1d(
-    x: Tensor, one: Tensor, weight: Tensor, bias: Union[Tensor,None], eps: float = 1e-5
+    x: Tensor, one: Tensor, weight: Tensor, bias: Union[Tensor, None], eps: float = 1e-5
 ):
     """
     x (Tensor): batch size, channels, sequence length

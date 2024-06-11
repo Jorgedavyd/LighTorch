@@ -3,6 +3,7 @@ import torch.nn.functional as F
 import torch
 from einops import rearrange
 from math import sqrt
+
 """
 Types:
 - GroupedQueryAttention
@@ -19,21 +20,24 @@ You can use it with:
 
 class _AttentionBase(nn.Module):
     def __init__(
-        self, sequence_length: int, sequence_attention: bool = False, scale_factor: float = 1., flash_attention: bool = True, is_causal: bool = False, attn_mask: Tensor = None
+        self,
+        sequence_length: int,
+        sequence_attention: bool = False,
+        scale_factor: float = 1.0,
+        flash_attention: bool = True,
+        is_causal: bool = False,
+        attn_mask: Tensor = None,
     ) -> None:
         super().__init__()
         self.attn_mask = attn_mask
         if is_causal:
-            assert (attn_mask is None), 'You defined both attn_mask and is_causal'
+            assert attn_mask is None, "You defined both attn_mask and is_causal"
             self.attn_mask = torch.ones(sequence_length, sequence_length).tril()
         self.seq = sequence_attention
         self.scale_factor = scale_factor
         self.flash = flash_attention
-        
 
-    def normal_attention(
-        self, q: Tensor, k: Tensor, v: Tensor
-    ) -> Tensor:
+    def normal_attention(self, q: Tensor, k: Tensor, v: Tensor) -> Tensor:
         if self.flash:
             with torch.backends.cuda.sdp_kernel(
                 enable_flash=True, enable_math=False, enable_mem_efficient=False
@@ -44,17 +48,15 @@ class _AttentionBase(nn.Module):
                 return out
 
         energy = q @ k.transpose(-1, -2)
-        
+
         if self.attn_mask is not None:
             energy.masked_fill_(self.attn_mask, -torch.inf)
 
         energy *= self.scale_factor
 
-        return F.softmax(energy, dim = -1) @ v
+        return F.softmax(energy, dim=-1) @ v
 
-    def seq_attention(
-        self, q: Tensor, k: Tensor, v: Tensor
-    ) -> Tensor:
+    def seq_attention(self, q: Tensor, k: Tensor, v: Tensor) -> Tensor:
         if self.flash:
             with torch.backends.cuda.sdp_kernel(
                 enable_flash=True, enable_math=False, enable_mem_efficient=False
@@ -75,7 +77,7 @@ class _AttentionBase(nn.Module):
 
         energy *= self.scale_factor
 
-        return (F.softmax(energy, dim = -1) @ v.transpose(-1, -2)).transpose(-1, -2)
+        return (F.softmax(energy, dim=-1) @ v.transpose(-1, -2)).transpose(-1, -2)
 
     def attention(self, q: Tensor, k: Tensor, v: Tensor) -> Tensor:
         if self.seq:
@@ -125,10 +127,17 @@ class GroupedQueryAttention(_AttentionBase):
     ) -> None:
         if scale_factor is None:
             if sequence_attention:
-                scale_factor: float = 1/sqrt(sequence_length)
+                scale_factor: float = 1 / sqrt(sequence_length)
             else:
-                scale_factor: float = 1/sqrt(embed_dim)
-        super(GroupedQueryAttention, self).__init__(sequence_length, sequence_attention, scale_factor, flash_attention, is_causal, attn_mask)
+                scale_factor: float = 1 / sqrt(embed_dim)
+        super(GroupedQueryAttention, self).__init__(
+            sequence_length,
+            sequence_attention,
+            scale_factor,
+            flash_attention,
+            is_causal,
+            attn_mask,
+        )
         # Defining the hidden spaces
         if vdim is None:
             vdim = embed_dim
@@ -159,17 +168,20 @@ class GroupedQueryAttention(_AttentionBase):
     def forward(self, q: Tensor, k: Tensor, v: Tensor) -> Tensor:
         # Reshaping for broadcasting
         q = rearrange(
-            self.Wq(q), "b s (g q d) -> b g q s d", q=self.group_query_amount, g=self.n_groups
+            self.Wq(q),
+            "b s (g q d) -> b g q s d",
+            q=self.group_query_amount,
+            g=self.n_groups,
         )  # -> (B, S, vdim) -> (B, n_groups, n_queries, S, query_dim)
-        k = rearrange(
-            self.Wk(k), "b s (g d) -> b g s d", g=self.n_groups
-        ).unsqueeze(2)  # -> (B, n_groups, S, query_dim)
-        v = rearrange(
-            self.Wv(v), "b s (g d) -> b g s d", g=self.n_groups
-        ).unsqueeze(2)  # -> (B, n_groups, S, query_dim)
-        
+        k = rearrange(self.Wk(k), "b s (g d) -> b g s d", g=self.n_groups).unsqueeze(
+            2
+        )  # -> (B, n_groups, S, query_dim)
+        v = rearrange(self.Wv(v), "b s (g d) -> b g s d", g=self.n_groups).unsqueeze(
+            2
+        )  # -> (B, n_groups, S, query_dim)
+
         print(q.shape, k.shape, v.shape)
-        
+
         out = rearrange(self.attention(q, k, v), "b g q s d -> b s (g q d)")
 
         return self.fc(out)
@@ -177,11 +189,11 @@ class GroupedQueryAttention(_AttentionBase):
 
 class MultiHeadAttention(_AttentionBase):
     def __init__(
-        self, 
-        embed_dim: int, 
+        self,
+        embed_dim: int,
         sequence_length: int,
-        n_heads: int, 
-        kdim: int = None, 
+        n_heads: int,
+        kdim: int = None,
         vdim: int = None,
         is_causal: bool = False,
         attn_mask: bool = None,
@@ -191,10 +203,17 @@ class MultiHeadAttention(_AttentionBase):
     ) -> None:
         if scale_factor is None:
             if sequence_attention:
-                scale_factor: float = 1/sqrt(sequence_length)
+                scale_factor: float = 1 / sqrt(sequence_length)
             else:
-                scale_factor: float = 1/sqrt(embed_dim)
-        super(MultiHeadAttention, self).__init__(sequence_length, sequence_attention, scale_factor, flash_attention, is_causal, attn_mask)
+                scale_factor: float = 1 / sqrt(embed_dim)
+        super(MultiHeadAttention, self).__init__(
+            sequence_length,
+            sequence_attention,
+            scale_factor,
+            flash_attention,
+            is_causal,
+            attn_mask,
+        )
         # Defining hidden spaces
         if vdim is None:
             vdim = embed_dim
@@ -250,10 +269,17 @@ class MultiQueryAttention(_AttentionBase):
     ) -> None:
         if scale_factor is None:
             if sequence_attention:
-                scale_factor: float = 1/sqrt(sequence_length)
+                scale_factor: float = 1 / sqrt(sequence_length)
             else:
-                scale_factor: float = 1/sqrt(embed_dim)
-        super(MultiQueryAttention, self).__init__(sequence_length, sequence_attention, scale_factor, flash_attention, is_causal, attn_mask)
+                scale_factor: float = 1 / sqrt(embed_dim)
+        super(MultiQueryAttention, self).__init__(
+            sequence_length,
+            sequence_attention,
+            scale_factor,
+            flash_attention,
+            is_causal,
+            attn_mask,
+        )
         if vdim is None:
             vdim = embed_dim
         if kdim is None:

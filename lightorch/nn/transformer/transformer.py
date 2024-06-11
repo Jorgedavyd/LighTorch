@@ -2,6 +2,7 @@ from torch import nn, Tensor
 from typing import Optional, List, Sequence, Tuple
 from ..functional import residual_connection
 from .attention import SelfAttention, CrossAttention
+
 """
 # Base transformer:
 SelfAttention: SelfAttention module from attention (both work for decoder and encoder like architectures)
@@ -12,7 +13,14 @@ FFN: A feed forward network (both work for decoder and encoder like architecture
 
 
 class _Transformer(nn.Module):
-    def __init__(self, self_attention: SelfAttention, cross_attention: CrossAttention, ffn: nn.Module, postnorm: nn.Module, prenorm: nn.Module) -> None:
+    def __init__(
+        self,
+        self_attention: SelfAttention,
+        cross_attention: CrossAttention,
+        ffn: nn.Module,
+        postnorm: nn.Module,
+        prenorm: nn.Module,
+    ) -> None:
         super().__init__()
         self._self_attention = self_attention
         self._cross_attention = cross_attention
@@ -58,7 +66,7 @@ class TransformerCell(_Transformer):
             x = self.ffn(x)
 
         return x
-    
+
 
 class Transformer(nn.Module):
     def __init__(
@@ -109,7 +117,13 @@ class Transformer(nn.Module):
 
 
 class CrossTransformer(nn.Module):
-    def __init__(self, cell_1: TransformerCell, cell_2: TransformerCell, n_layers: int, fc: nn.Module) -> None:
+    def __init__(
+        self,
+        cell_1: TransformerCell,
+        cell_2: TransformerCell,
+        n_layers: int,
+        fc: nn.Module,
+    ) -> None:
         super().__init__()
         self.cell_1 = nn.ModuleList([cell_1 for _ in range(n_layers)])
         self.cell_2 = nn.ModuleList([cell_2 for _ in range(n_layers)])
@@ -134,11 +148,11 @@ class CrossTransformer(nn.Module):
 
         return out0, out1
 
-    def forward(self, head_1: Sequence, head_2: Sequence) -> Tuple[Tuple[Tensor], Tuple[Tensor]]:
+    def forward(
+        self, head_1: Sequence, head_2: Sequence
+    ) -> Tuple[Tuple[Tensor], Tuple[Tensor]]:
         for cell_1, cell_2 in zip(self.cell_1, self.cell_2):
-            head_1, head_2 = self._single_forward(
-                cell_1, cell_2, head_1, head_2
-            )
+            head_1, head_2 = self._single_forward(cell_1, cell_2, head_1, head_2)
 
         return head_1, head_2
 

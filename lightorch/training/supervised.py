@@ -31,17 +31,19 @@ VALID_SCHEDULERS = {
     "linear": LinearLR,
 }
 
+
 def interval(algo: LRScheduler) -> str:
     if isinstance(algo, OneCycleLR):
         return "step"
     else:
         return "epoch"
 
+
 class Module(LightningModule):
     """
     init:
         triggers: Dict[str, Dict[str, float]] -> This is an
-        interpretative implementation for grouped optimization 
+        interpretative implementation for grouped optimization
         where the parameters are stored in groups given a "trigger",
         namely, as trigger parameters you can put a string describing
         the beginning of the parameters to optimize in a group.
@@ -51,38 +53,47 @@ class Module(LightningModule):
         gradient_clip_algorithm: str -> Gradient clip algorithm [value, norm].
         gradient_clip_val: float -> Clipping value.
     """
+
     def __init__(
-            self, 
-            *,
-            optimizer: Union[str, Optimizer],
-            scheduler: Union[str, LRScheduler] = None,
-            triggers: Dict[str, Dict[str, float]] = None,
-            optimizer_kwargs: Dict[str, Any] = None,
-            scheduler_kwargs: Dict[str, Any] = None,
-            **kwargs
-        ) -> None:
+        self,
+        *,
+        optimizer: Union[str, Optimizer],
+        scheduler: Union[str, LRScheduler] = None,
+        triggers: Dict[str, Dict[str, float]] = None,
+        optimizer_kwargs: Dict[str, Any] = None,
+        scheduler_kwargs: Dict[str, Any] = None,
+        **kwargs,
+    ) -> None:
         super().__init__()
         for att in kwargs:
             setattr(self, att, kwargs[att])
-            
+
         # Initializing the optimizer and the triggers
         self.triggers = triggers
         if triggers is not None:
-            assert optimizer_kwargs is None, 'Not valid optimizer_kwargs parameter for trigger-based setting, include all optimizer parameters in the dictionary with their respective name.'
+            assert (
+                optimizer_kwargs is None
+            ), "Not valid optimizer_kwargs parameter for trigger-based setting, include all optimizer parameters in the dictionary with their respective name."
             self.triggers = triggers
         else:
             if not isinstance(optimizer, Optimizer):
-                assert optimizer_kwargs is not None, 'Must specify optimizer_kwargs parameter for non-trigger-based setting.'
+                assert (
+                    optimizer_kwargs is not None
+                ), "Must specify optimizer_kwargs parameter for non-trigger-based setting."
                 self.optimizer_kwargs = optimizer_kwargs
             else:
-                assert optimizer_kwargs is None, 'Not valid optimizer_kwargs parameter for initialized optimizer.'
+                assert (
+                    optimizer_kwargs is None
+                ), "Not valid optimizer_kwargs parameter for initialized optimizer."
                 self.optimizer = optimizer
 
         if isinstance(optimizer, str) or issubclass(optimizer, Optimizer):
             self.optimizer = optimizer
         else:
-            if not getattr(self, 'optimizer', False):
-                raise ValueError(f'Not valid optimizer parameter, expecting str | Optimizer got {type(optimizer)}')
+            if not getattr(self, "optimizer", False):
+                raise ValueError(
+                    f"Not valid optimizer parameter, expecting str | Optimizer got {type(optimizer)}"
+                )
 
         # Initializing the scheduler
         if scheduler is not None:
@@ -90,15 +101,19 @@ class Module(LightningModule):
                 self.scheduler = scheduler
                 self.scheduler_kwargs = scheduler_kwargs
             elif isinstance(scheduler, LRScheduler):
-                self.scheduler = lambda optimizer: scheduler(optimizer=optimizer, **scheduler_kwargs)
+                self.scheduler = lambda optimizer: scheduler(
+                    optimizer=optimizer, **scheduler_kwargs
+                )
             else:
-                raise ValueError('Not valid scheduler parameter')
+                raise ValueError("Not valid scheduler parameter")
         else:
-            assert scheduler_kwargs is None, 'Not valid scheduler_kwargs parameter for NoneType scheduler'
+            assert (
+                scheduler_kwargs is None
+            ), "Not valid scheduler_kwargs parameter for NoneType scheduler"
             self.scheduler = None
 
     def loss_forward(self, batch: Tensor, idx: int) -> Dict[str, Union[Tensor, float]]:
-        raise NotImplementedError('Should have defined loss_forward method.')
+        raise NotImplementedError("Should have defined loss_forward method.")
 
     def training_step(self, batch: Tensor, idx: int) -> Tensor:
         kwargs = self.loss_forward(batch, idx)
@@ -148,11 +163,12 @@ class Module(LightningModule):
                         param_group["params"].append(param)
 
                 param_group.update(self.triggers[trigger])
-            
+
             return param_groups
         return None
+
     def _configure_optimizer(self) -> Optimizer:
-        if params:= self.get_param_groups() is not None:
+        if params := self.get_param_groups() is not None:
             if isinstance(self.optimizer, str):
                 return VALID_OPTIMIZERS[self.optimizer](params)
             elif isinstance(self.optimizer, torch.optim.Optimizer):
@@ -160,24 +176,26 @@ class Module(LightningModule):
             elif issubclass(self.optimizer, torch.optim.Optimizer):
                 return self.optimizer(params)
         else:
-            
+
             if isinstance(self.optimizer, str):
                 self.optimizer = VALID_OPTIMIZERS[self.optimizer]
             elif isinstance(self.optimizer, Optimizer):
                 return self.optimizer
             elif issubclass(self.optimizer, Optimizer):
                 pass
-            
+
             return self.optimizer(self.parameters(), **self.optimizer_kwargs)
-            
+
     def _configure_scheduler(self, optimizer: Optimizer) -> LRScheduler:
         if isinstance(self.scheduler, str):
             if self.scheduler == "onecycle":
-                self.scheduler_kwargs["total_steps"] = self.trainer.estimated_stepping_batches
+                self.scheduler_kwargs["total_steps"] = (
+                    self.trainer.estimated_stepping_batches
+                )
             return VALID_SCHEDULERS[self.scheduler](optimizer, **self.scheduler_kwargs)
         else:
             return self.scheduler(optimizer)
-        
+
     def configure_optimizers(self) -> Union[Optimizer, Sequence[Optimizer]]:
         optimizer = self._configure_optimizer()
         if self.scheduler is not None:
@@ -191,5 +209,6 @@ class Module(LightningModule):
                 },
             }
         return {"optimizer": optimizer}
+
 
 __all__ = ["Module"]
