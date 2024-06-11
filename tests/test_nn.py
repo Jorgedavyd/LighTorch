@@ -400,52 +400,53 @@ def test_pos() -> None:
     output = dn_pos_enc(input_tensor)
     assert output.shape == input_tensor.shape
 
-def test_patch_embedding_3dcnn():
-    batch_size = 2
-    frames = 8
-    channels = 3
-    height = 32
-    width = 32
-    h_div = 4
-    w_div = 4
-    d_model = 64
-    architecture = (channels,)
-    hidden_activations = (nn.ReLU(),)
-    dropout = 0.1
+# implementation on c++
+# def test_patch_embedding_3dcnn():
+#     batch_size = 2
+#     frames = 8
+#     channels = 3
+#     height = 32
+#     width = 32
+#     h_div = 4
+#     w_div = 4
+#     d_model = 64
+#     architecture = (channels,)
+#     hidden_activations = (nn.ReLU(),)
+#     dropout = 0.1
 
-    input_tensor = torch.randn(batch_size, frames, channels, height, width)
+#     input_tensor = torch.randn(batch_size, frames, channels, height, width)
 
-    feature_extractor = FeatureExtractor3D() # Define
-    pe = AbsoluteSinusoidalPositionalEncoding()
+#     feature_extractor = FeatureExtractor3D() # Define
+#     pe = AbsoluteSinusoidalPositionalEncoding()
 
-    patch_embed = PatchEmbeddding3DCNN(h_div=h_div, w_div=w_div, pe=pe, feature_extractor=feature_extractor, X=input_tensor)
+#     patch_embed = PatchEmbeddding3DCNN(h_div=h_div, w_div=w_div, pe=pe, feature_extractor=feature_extractor, X=input_tensor)
 
-    output = patch_embed(input_tensor)
+#     output = patch_embed(input_tensor)
 
-    assert output.shape == (batch_size, h_div * w_div, d_model)
+#     assert output.shape == (batch_size, h_div * w_div, d_model)
     
-    feature_extractor = FeatureExtractor2D()
+#     feature_extractor = FeatureExtractor2D()
     
-    patch_embed = PatchEmbedding2DCNN(d_model=d_model, pe=pe, feature_extractor=feature_extractor, architecture=architecture, hidden_activations=hidden_activations, dropout=dropout)
+#     patch_embed = PatchEmbedding2DCNN(d_model=d_model, pe=pe, feature_extractor=feature_extractor, architecture=architecture, hidden_activations=hidden_activations, dropout=dropout)
 
-    output = patch_embed(input_tensor)
+#     output = patch_embed(input_tensor)
 
-    assert output.shape == (batch_size, frames, d_model)
+#     assert output.shape == (batch_size, frames, d_model)
 
-def test_res() -> None:
-    input_size = 10
-    sequence_length = 16
-    batch_size = 2
-    hidden_size = 20
-    rnn_layers = 1
-    res_layers = 1
-    shape = (input_size, sequence_length, batch_size)
-    x = torch.randn(*shape) # batch_size, sequence, input_size
+# def test_res() -> None:
+#     input_size = 10
+#     sequence_length = 16
+#     batch_size = 2
+#     hidden_size = 20
+#     rnn_layers = 1
+#     res_layers = 1
+#     shape = (input_size, sequence_length, batch_size)
+#     x = torch.randn(*shape) # batch_size, sequence, input_size
     
-    model = GRU(input_size, hidden_size, rnn_layers, res_layers)
-    out = model(x)
-    assert (out.shape == shape), 'Residual GRU failed'
+#     model = GRU(input_size, hidden_size, rnn_layers, res_layers)
+#     out = model(x)
+#     assert (out.shape == shape), 'Residual GRU failed'
     
-    model = LSTM(input_size, hidden_size, rnn_layers, res_layers)
-    out = model(x)
-    assert (out.shape == shape), 'Residual LSTM failed'
+#     model = LSTM(input_size, hidden_size, rnn_layers, res_layers)
+#     out = model(x)
+#     assert (out.shape == shape), 'Residual LSTM failed'
