@@ -29,7 +29,6 @@ class RotaryPositionalEncoding(nn.Module):
         seq_len: int,
         theta: int = 10000,
         dtype=torch.float32,
-        device="cuda",
     ) -> None:
         super(RotaryPositionalEncoding, self).__init__()
         """
@@ -40,45 +39,32 @@ class RotaryPositionalEncoding(nn.Module):
         We want to introduce a linear transformation onto this so it makes a learnable rotation into the 
         embedding space 
         """
-        self.device = device
-
         # embedding size must be even
         assert d_model % 2 == 0, "d_model must be div by 2"
-        # Create all thetas (theta_i) for i in range(0,ndim/2) theta^(-(2i)/ndim)
-        theta_j = torch.tensor(
-            [1 / theta ** ((2 * i) / d_model) for i in range(d_model / 2)],
-            dtype=dtype,
-            device=self.device,
-        )
+        self.theta_numerator = torch.arange(0, d_model, 2).float()
+        self.theta_j = 1.0 / (theta ** (self.theta_numerator / d_model)) # (Dim / 2)
         # creates absolute position based on seq_len
-        m_i = torch.arange(
-            seq_len,
-        )
+        self.m_i = torch.arange(seq_len)
         # creates (m_i,theta_j) matrix
-        function_inputs = torch.outer(m_i, theta_j)
+        function_inputs = torch.outer(self.m_i, self.theta_j).float()
         # translated into polar
-        self.rotary_transformation = (
-            torch.polar(torch.ones_like(function_inputs), function_inputs)
-            .unsqueeze(0)
-            .unsqueeze(2)
-        )
+        self.freqs_complex = torch.polar(torch.ones_like(function_inputs), function_inputs)
 
-    def forward(
-        self,
-        x_n: Tensor,
-    ) -> Tensor:
-        # resampling input from embedding space into (batch_size, seq_len, embedding_size/2)
-        # (B, N, d_model) -> (B,N,d_model/2) polar transformation
-        resampled_input = torch.view_as_complex(
-            x_n.float().reshape(*x_n.shape[:-1], -1, 2)
-        )
-        # F: ((1, N, 1, d_model/2), (B,N,H,d_model/2)) -> (B,N,H,d_model/2)
-        rotated_batch = self.rotary_transformation * resampled_input
-        # (B,N,H,d_model/2) -> (B,N,H, d_model/2, 2)
-        rot_out = torch.view_as_real(rotated_batch)
-        # (B,N,H,d_model/2, 2) -> (B,N,H,d_model)
-        rot_out = rot_out.reshape(*x_n.shape)
-        return rot_out.type_as(x_n).to(self.device)
+    def forward(self, x) -> Tensor:
+        x_complex = torch.view_as_complex(x.float().reshape(*x.shape[:-1], -1, 2))
+        # Reshape the freqs_complex tensor to match the shape of the x_complex tensor. So we need to add the batch dimension and the head dimension
+        # (Seq_Len, Head_Dim/2) --> (1, Seq_Len, 1, Head_Dim/2)
+        freqs_complex = self.freqs_complex.unsqueeze(0)
+        # Multiply each complex number in the x_complex tensor by the corresponding complex number in the freqs_complex tensor
+        # Which results in the rotation of the complex number as shown in the Figure 1 of the paper
+        # (B, Seq_Len, H, Head_Dim/2) * (1, Seq_Len, 1, Head_Dim/2) = (B, Seq_Len, H, Head_Dim/2)
+        x_rotated = x_complex * freqs_complex
+        # Convert the complex number back to the real number
+        # (B, Seq_Len, H, Head_Dim/2) -> (B, Seq_Len, H, Head_Dim/2, 2)
+        x_out = torch.view_as_real(x_rotated)
+        # (B, Seq_Len, H, Head_Dim/2, 2) -> (B, Seq_Len, H, Head_Dim)
+        x_out = x_out.reshape(*x.shape)
+        return x_out.type_as(x)
 
 
 """
@@ -99,7 +85,7 @@ class DnPositionalEncoding(nn.Module):
     def forward(self, x_n: Tensor) -> Tensor:
         out = x_n.clone()
         for _ in range(1, self.degree + 1):
-            x_n = torch.gradient(
+            (x_n, ) = torch.gradient(
                 x_n, spacing=(self.delta_t,), dim=-1, edge_order=self.edge_order
             )
             out += x_n

@@ -53,7 +53,6 @@ class PatchEmbedding2DCNN(nn.Module):
     def __init__(
         self,
         d_model: int,
-        pe,
         feature_extractor,
         architecture: tuple,
         hidden_activations: tuple,
@@ -74,7 +73,6 @@ class PatchEmbedding2DCNN(nn.Module):
         self.feature_extractor = feature_extractor(
             d_model, architecture, hidden_activations, dropout
         )
-        self.pe = pe
 
     def forward(self, X: Tensor):
         B, F, C, H, W = X.shape
@@ -83,8 +81,7 @@ class PatchEmbedding2DCNN(nn.Module):
         # -> (B,F, embed_size)
         out = self.feature_extractor(X).view(B, F, -1)
         # -> (B,F, embed_size)
-        X = self.pe(out)
-        return X
+        return out
 
 
 __all__ = ["PatchEmbeddding3DCNN", "PatchEmbedding2DCNN"]

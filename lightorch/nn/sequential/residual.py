@@ -3,9 +3,10 @@ from typing import Union, Tuple, Callable, Any, Union
 from ..functional import residual_connection
 
 class _Residual(nn.Module):
-    def __init__(self, module: Union[nn.Module, Callable[[int, int], nn.Module]], input_size: int, hidden_size: int, n_layers: int):
-        self.model = nn.ModuleList([module(input_size, hidden_size) for _ in range(n_layers)])
-    def forward(self, x: Tensor) -> Union[Tuple[Tensor, Tuple[Tensor, Tensor]], Tuple[Tensor, Tensor], Tensor]:
+    def __init__(self, module: Union[nn.Module, Callable[[int, int], nn.Module]], n_layers: int):
+        super().__init__()
+        self.model = nn.ModuleList([module for _ in range(n_layers)])
+    def forward(self, x: Tensor) -> Tensor:
         for layer in self.model:
             x, _ = residual_connection(x, lambda x: layer(x))
         
@@ -26,7 +27,7 @@ class LSTM(_Residual):
         device: Union[Any, None] = None,
         dtype: Union[Any, None] = None,
     ) -> None:
-        super().__init__(lambda input_size, hidden_size: nn.LSTM(
+        super().__init__(nn.LSTM(
             input_size,
             hidden_size,
             lstm_layers,
@@ -37,7 +38,7 @@ class LSTM(_Residual):
             proj_size,
             device,
             dtype
-        ), input_size, hidden_size, res_layers)        
+        ), res_layers)        
         
 class GRU(_Residual):
     def __init__(
@@ -53,7 +54,7 @@ class GRU(_Residual):
         device: Union[Any, None] = None,
         dtype: Union[Any, None] = None,
     ) -> None:
-        super().__init__(lambda input_size, hidden_size: nn.GRU(
+        super().__init__(nn.GRU(
             input_size,
             hidden_size,
             gru_layers,
@@ -62,7 +63,7 @@ class GRU(_Residual):
             dropout,
             bidirectional,
             device,
-            dtype
-        ), input_size, hidden_size, res_layers)        
+            dtype,
+        ), res_layers)        
         
 __all__ = ['LSTM', 'GRU']

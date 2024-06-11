@@ -1,6 +1,7 @@
 from torch import nn, Tensor
 import torch
 
+
 """
 Root Mean Squared Normalization (https://arxiv.org/pdf/1910.07467.pdf)
 

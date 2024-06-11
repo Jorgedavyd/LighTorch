@@ -201,7 +201,7 @@ def test_transformer_cell() -> None:
     input_tensor = torch.randn(batch_size, seq_length, embed_dim)
     cross_tensor = torch.randn(batch_size, seq_length, embed_dim)
 
-    attention = MultiHeadAttention(embed_dim, n_heads)
+    attention = MultiHeadAttention(embed_dim, seq_length, n_heads)
     ffn = nn.Sequential(
         nn.Linear(embed_dim, 4 * embed_dim),
         nn.ReLU(),
@@ -221,7 +221,7 @@ def test_transformer_cell() -> None:
     output = transformer_cell.self_attention(input_tensor)
     assert output.shape == input_tensor.shape
 
-    output = transformer_cell.cross_attention(input_tensor, cross_tensor, is_causal=False)
+    output = transformer_cell.cross_attention(input_tensor, cross_tensor)
     assert output.shape == input_tensor.shape
 
     output = transformer_cell.ffn(input_tensor)
@@ -235,9 +235,9 @@ def test_transformer() -> None:
 
     input_tensor = torch.randn(batch_size, seq_length, embed_dim)
 
-    embedding_layer = nn.Embedding(100, embed_dim)
-    positional_encoding = nn.Parameter(torch.randn(seq_length, embed_dim))
-    attention = MultiHeadAttention(embed_dim, n_heads)
+    embedding_layer = nn.Linear(embed_dim, embed_dim)
+    positional_encoding = AbsoluteSinusoidalPositionalEncoding(0.)
+    attention = MultiHeadAttention(embed_dim, seq_length, n_heads)
     ffn = nn.Sequential(
         nn.Linear(embed_dim, 4 * embed_dim),
         nn.ReLU(),
@@ -261,7 +261,7 @@ def test_transformer() -> None:
         n_layers=1,
     )
 
-    output = transformer(input_ids=input_tensor)
+    output = transformer(input_tensor)
     assert output.shape == (batch_size, seq_length, embed_dim)
 
 def test_cross_transformer() -> None:
@@ -273,7 +273,7 @@ def test_cross_transformer() -> None:
     first_input = torch.randn(batch_size, seq_length, embed_dim)
     second_input = torch.randn(batch_size, seq_length, embed_dim)
 
-    attention = MultiHeadAttention(embed_dim, n_heads)
+    attention = MultiHeadAttention(embed_dim, seq_length, n_heads)
     ffn = nn.Sequential(
         nn.Linear(embed_dim, 4 * embed_dim),
         nn.ReLU(),
@@ -314,12 +314,11 @@ def test_att() -> None:
 
     input_tensor = torch.randn(batch_size, seq_length, embed_dim)
     cross_tensor = torch.randn(batch_size, seq_length, embed_dim)
-    mask = torch.randint(0, 2, (batch_size, seq_length, seq_length)).bool()
 
     # Initialize attention mechanisms
-    multi_head_attention = MultiHeadAttention(embed_dim, n_heads)
-    multi_query_attention = MultiQueryAttention(embed_dim, n_queries)
-    grouped_query_attention = GroupedQueryAttention(embed_dim, n_queries, n_groups)
+    multi_head_attention = MultiHeadAttention(embed_dim, seq_length, n_heads)
+    multi_query_attention = MultiQueryAttention(embed_dim, seq_length, n_queries)
+    grouped_query_attention = GroupedQueryAttention(embed_dim, seq_length, n_queries, n_groups)
 
     # Wrap with SelfAttention and CrossAttention
     self_attention_mh = SelfAttention(multi_head_attention)
@@ -390,7 +389,7 @@ def test_pos() -> None:
     input_tensor = torch.randn(batch_size, seq_length, embed_dim)
 
     abs_pos_enc = AbsoluteSinusoidalPositionalEncoding(dropout=dropout)
-    rot_pos_enc = RotaryPositionalEncoding(d_model=embed_dim, seq_len=seq_length, device="cpu")
+    rot_pos_enc = RotaryPositionalEncoding(d_model=embed_dim, seq_len=seq_length)
     dn_pos_enc = DnPositionalEncoding(delta_t=delta_t, degree=degree, edge_order=edge_order)
 
 

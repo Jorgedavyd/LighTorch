@@ -1,7 +1,7 @@
 from torch import nn, Tensor
-from typing import Optional, List, Sequence
+from typing import Optional, List, Sequence, Tuple
 from ..functional import residual_connection
-
+from .attention import SelfAttention, CrossAttention
 """
 # Base transformer:
 SelfAttention: SelfAttention module from attention (both work for decoder and encoder like architectures)
@@ -12,7 +12,7 @@ FFN: A feed forward network (both work for decoder and encoder like architecture
 
 
 class _Transformer(nn.Module):
-    def __init__(self, self_attention, cross_attention, ffn, postnorm, prenorm) -> None:
+    def __init__(self, self_attention: SelfAttention, cross_attention: CrossAttention, ffn: nn.Module, postnorm: nn.Module, prenorm: nn.Module) -> None:
         super().__init__()
         self._self_attention = self_attention
         self._cross_attention = cross_attention
@@ -28,25 +28,37 @@ class _Transformer(nn.Module):
     def ffn(self, input: Tensor) -> Tensor:
         return self._apply_sublayer(input, self._ffn)
 
-    def cross_attention(self, input: Tensor, cross: Tensor, is_causal) -> Tensor:
-        return self._apply_sublayer(input, self._cross_attention, cross, is_causal)
+    def cross_attention(self, input: Tensor, cross: Tensor) -> Tensor:
+        return self._apply_sublayer(input, self._cross_attention, cross)
 
-    def self_attention(self, input: Tensor, is_causal: bool = False) -> Tensor:
-        return self._apply_sublayer(input, self._self_attention, is_causal)
+    def self_attention(self, input: Tensor) -> Tensor:
+        return self._apply_sublayer(input, self._self_attention)
 
 
 class TransformerCell(_Transformer):
     def __init__(
         self,
         *,
-        self_attention: nn.Module = None,
-        cross_attention: nn.Module = None,
+        self_attention: SelfAttention = None,
+        cross_attention: CrossAttention = None,
         ffn: nn.Module = None,
         prenorm: nn.Module = None,
         postnorm: nn.Module = None
     ) -> None:
         super().__init__(self_attention, cross_attention, ffn, postnorm, prenorm)
 
+    def forward(self, x: Tensor, cross: Optional[Tensor] = None) -> Tensor:
+        if self._self_attention is not None:
+            x = self.self_attention(x)
+
+        if self._cross_attention is not None and cross is not None:
+            x = self.cross_attention(x, cross)
+
+        if self._ffn is not None:
+            x = self.ffn(x)
+
+        return x
+    
 
 class Transformer(nn.Module):
     def __init__(
@@ -72,63 +84,63 @@ class Transformer(nn.Module):
         self.n_layers = n_layers
         self.fc = fc
 
-    def forward(self, **kwargs) -> Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         if self.embedding is not None:
-            out = self.embedding(**kwargs)
+            x = self.embedding(x)
         if self.pe is not None:
-            out = self.pe(out)
+            x = self.pe(x)
 
         if self.encoder and self.decoder:
-            hist: List = []
-            for encoder in self.encoder:
-                out = encoder(out)
-                hist.append(out)
+            for encoder, decoder in zip(self.encoder, self.decoder):
+                x = encoder(x)
+                out = decoder(x)
 
-            for cross, decoder in zip(hist, self.decoder):
-                out = decoder(**kwargs, cross=cross)
-
-            out = self.fc(out)
+            x = self.fc(out)
 
         elif self.encoder:
             for encoder in self.encoder:
-                out = encoder(out)
+                x = encoder(x)
 
         else:
             for decoder in self.decoder:
-                out = decoder(out)
+                x = decoder(x)
 
-        return out
+        return x
 
 
 class CrossTransformer(nn.Module):
-    def __init__(self, *cells, n_layers: int, fc: nn.Module) -> None:
-        assert len(cells) == 2, "Must be 2 transformer cells"
-        self.cells = nn.ModuleList([cells for _ in range(n_layers)])
+    def __init__(self, cell_1: TransformerCell, cell_2: TransformerCell, n_layers: int, fc: nn.Module) -> None:
+        super().__init__()
+        self.cell_1 = nn.ModuleList([cell_1 for _ in range(n_layers)])
+        self.cell_2 = nn.ModuleList([cell_2 for _ in range(n_layers)])
         self.fc = fc
         self.n_layers = n_layers
 
     def _single_forward(
         self,
-        cells: Sequence[TransformerCell],
-        first_args: Sequence,
-        second_args: Sequence,
+        cell_1: Sequence[TransformerCell],
+        cell_2: Sequence[TransformerCell],
+        head_1: Tensor,
+        head_2: Tensor,
     ) -> Tensor:
-        out0 = cells[0].self_attention(*first_args)
-        out1 = cells[1].self_attention(*second_args)
+        out0 = cell_1.self_attention(head_1)
+        out1 = cell_2.self_attention(head_2)
 
-        out0 = cells[0].cross_attention(out0, out1)
-        out1 = cells[1].cross_attention(out1, out0)
+        out0 = cell_1.cross_attention(out0, out1)
+        out1 = cell_2.cross_attention(out1, out0)
 
-        out0 = cells[0].ffn(*out0)
-        out1 = cells[1].ffn(*out1)
+        out0 = cell_1.ffn(out0)
+        out1 = cell_2.ffn(out1)
 
-        return (out0,), (out1,)
+        return out0, out1
 
-    def forward(self, first_inputs: Sequence, second_inputs: Sequence) -> Tensor:
-        for layer, cells in enumerate(self.cells):
-            first_inputs, second_inputs = self._single_forward(
-                cells, layer, first_inputs, second_inputs
+    def forward(self, head_1: Sequence, head_2: Sequence) -> Tuple[Tuple[Tensor], Tuple[Tensor]]:
+        for cell_1, cell_2 in zip(self.cell_1, self.cell_2):
+            head_1, head_2 = self._single_forward(
+                cell_1, cell_2, head_1, head_2
             )
+
+        return head_1, head_2
 
 
 __all__ = ["Transformer", "TransformerCell", "CrossTransformer"]

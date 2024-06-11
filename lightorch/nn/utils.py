@@ -63,7 +63,7 @@ class FeatureExtractor2D(nn.Module):
         self, layers: Sequence[int] = [4, 9, 18], model_str: str = "vgg19"
     ) -> None:
         assert model_str in VALID_MODELS_2D, f"Model not in {VALID_MODELS_2D.keys()}"
-        assert list(set(layers)) == layers, "Not valid repeated inputs"
+        assert len(list(set(layers))) == len(layers), "Not valid repeated inputs"
         hist: List = []
         for layer in layers:
             valid_models: List[str] = VALID_MODELS_2D[model_str]["valid_layers"]
