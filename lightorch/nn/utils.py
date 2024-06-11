@@ -101,6 +101,7 @@ class FeatureExtractor2D(nn.Module):
                     if name == self.layers[-1]:
                         return features
 
+
 VALID_MODELS_3D = {
     "vgg19": {
         "model": vgg19,
@@ -190,7 +191,8 @@ class FeatureExtractor3D(nn.Module):
                     if name == self.layers[-1]:
                         return features
 
+
 __all__ = [
-    'FeatureExtractor2D',
-    'FeatureExtractor3D',
+    "FeatureExtractor2D",
+    "FeatureExtractor3D",
 ]

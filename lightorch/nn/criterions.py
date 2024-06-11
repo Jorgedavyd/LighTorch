@@ -26,7 +26,9 @@ class LighTorchLoss(nn.Module):
 
 class Loss(LighTorchLoss):
     def __init__(self, *loss) -> None:
-        assert (len(set(map(type, loss))) == len(loss)), 'Not valid input classes, each should be different.'
+        assert len(set(map(type, loss))) == len(
+            loss
+        ), "Not valid input classes, each should be different."
         super().__init__(
             list(set([*chain.from_iterable([i.labels for i in loss])])),
             _merge_dicts([i.factors for i in loss]),

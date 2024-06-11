@@ -20,14 +20,14 @@
 #         super().__init__(**hparams)
 #         # Criterion
 #         self.criterion = MSELoss()
-        
+
 #         self.model = nn.Sequential(
 #             nn.Linear(10, 5),
 #             nn.ReLU(),
 #             nn.Linear(5, 1),
 #             nn.Sigmoid()
 #         )
-        
+
 #     def forward(self, input: Tensor) -> Tensor:
 #         return self.model(input)
 
@@ -35,7 +35,7 @@
 # def objective1(trial: optuna.trial.Trial):
 #     return dict(
 #         triggers = {'model': dict(
-#             lr = trial.suggest_float('lr', 1e-4, 1e-1), 
+#             lr = trial.suggest_float('lr', 1e-4, 1e-1),
 #             weight_decay = trial.suggest_float('weight_decay', 1e-4, 1e-1),
 #             momentum = trial.suggest_float('momentum', 0.1, 0.7)
 #             )},

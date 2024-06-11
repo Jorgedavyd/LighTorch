@@ -24,8 +24,10 @@ class Data(Dataset):
         self,
     ) -> None:
         pass
+
     def __len__(self) -> int:
         return 100
+
     def __getitem__(self, index) -> Tensor:
         return torch.randn(10)
 

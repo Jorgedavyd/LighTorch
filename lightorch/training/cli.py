@@ -15,7 +15,6 @@ def trainer(
         trainer_defaults={
             "deterministic": deterministic,
         },
-
     )
 
 

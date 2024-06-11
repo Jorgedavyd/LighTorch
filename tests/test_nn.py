@@ -205,7 +205,7 @@ def test_transformer_cell() -> None:
     ffn = nn.Sequential(
         nn.Linear(embed_dim, 4 * embed_dim),
         nn.ReLU(),
-        nn.Linear(4 * embed_dim, embed_dim)
+        nn.Linear(4 * embed_dim, embed_dim),
     )
     prenorm = nn.LayerNorm(embed_dim)
     postnorm = nn.LayerNorm(embed_dim)
@@ -215,7 +215,7 @@ def test_transformer_cell() -> None:
         cross_attention=CrossAttention(attention),
         ffn=ffn,
         prenorm=prenorm,
-        postnorm=postnorm
+        postnorm=postnorm,
     )
 
     output = transformer_cell.self_attention(input_tensor)
@@ -227,6 +227,7 @@ def test_transformer_cell() -> None:
     output = transformer_cell.ffn(input_tensor)
     assert output.shape == input_tensor.shape
 
+
 def test_transformer() -> None:
     batch_size = 32
     seq_length = 10
@@ -236,12 +237,12 @@ def test_transformer() -> None:
     input_tensor = torch.randn(batch_size, seq_length, embed_dim)
 
     embedding_layer = nn.Linear(embed_dim, embed_dim)
-    positional_encoding = AbsoluteSinusoidalPositionalEncoding(0.)
+    positional_encoding = AbsoluteSinusoidalPositionalEncoding(0.0)
     attention = MultiHeadAttention(embed_dim, seq_length, n_heads)
     ffn = nn.Sequential(
         nn.Linear(embed_dim, 4 * embed_dim),
         nn.ReLU(),
-        nn.Linear(4 * embed_dim, embed_dim)
+        nn.Linear(4 * embed_dim, embed_dim),
     )
     prenorm = nn.LayerNorm(embed_dim)
     postnorm = nn.LayerNorm(embed_dim)
@@ -251,7 +252,7 @@ def test_transformer() -> None:
         cross_attention=CrossAttention(attention),
         ffn=ffn,
         prenorm=prenorm,
-        postnorm=postnorm
+        postnorm=postnorm,
     )
 
     transformer = Transformer(
@@ -263,6 +264,7 @@ def test_transformer() -> None:
 
     output = transformer(input_tensor)
     assert output.shape == (batch_size, seq_length, embed_dim)
+
 
 def test_cross_transformer() -> None:
     batch_size = 32
@@ -277,7 +279,7 @@ def test_cross_transformer() -> None:
     ffn = nn.Sequential(
         nn.Linear(embed_dim, 4 * embed_dim),
         nn.ReLU(),
-        nn.Linear(4 * embed_dim, embed_dim)
+        nn.Linear(4 * embed_dim, embed_dim),
     )
     prenorm = nn.LayerNorm(embed_dim)
     postnorm = nn.LayerNorm(embed_dim)
@@ -287,7 +289,7 @@ def test_cross_transformer() -> None:
         cross_attention=CrossAttention(attention),
         ffn=ffn,
         prenorm=prenorm,
-        postnorm=postnorm
+        postnorm=postnorm,
     )
 
     cell2 = TransformerCell(
@@ -295,14 +297,17 @@ def test_cross_transformer() -> None:
         cross_attention=CrossAttention(attention),
         ffn=ffn,
         prenorm=prenorm,
-        postnorm=postnorm
+        postnorm=postnorm,
     )
 
-    cross_transformer = CrossTransformer(cell1, cell2, n_layers=1, fc=nn.Linear(embed_dim, embed_dim))
+    cross_transformer = CrossTransformer(
+        cell1, cell2, n_layers=1, fc=nn.Linear(embed_dim, embed_dim)
+    )
 
     output = cross_transformer(first_input, second_input)
     assert output[0].shape == (batch_size, seq_length, embed_dim)
     assert output[1].shape == (batch_size, seq_length, embed_dim)
+
 
 def test_att() -> None:
     batch_size = 32
@@ -318,7 +323,9 @@ def test_att() -> None:
     # Initialize attention mechanisms
     multi_head_attention = MultiHeadAttention(embed_dim, seq_length, n_heads)
     multi_query_attention = MultiQueryAttention(embed_dim, seq_length, n_queries)
-    grouped_query_attention = GroupedQueryAttention(embed_dim, seq_length, n_queries, n_groups)
+    grouped_query_attention = GroupedQueryAttention(
+        embed_dim, seq_length, n_queries, n_groups
+    )
 
     # Wrap with SelfAttention and CrossAttention
     self_attention_mh = SelfAttention(multi_head_attention)
@@ -330,22 +337,34 @@ def test_att() -> None:
     cross_attention_gq = CrossAttention(grouped_query_attention, method="i i c")
 
     output_mh_self = self_attention_mh(input_tensor)
-    assert output_mh_self.shape == input_tensor.shape, f"Expected shape {input_tensor.shape}, got {output_mh_self.shape}"
+    assert (
+        output_mh_self.shape == input_tensor.shape
+    ), f"Expected shape {input_tensor.shape}, got {output_mh_self.shape}"
 
     output_mq_self = self_attention_mq(input_tensor)
-    assert output_mq_self.shape == input_tensor.shape, f"Expected shape {input_tensor.shape}, got {output_mq_self.shape}"
+    assert (
+        output_mq_self.shape == input_tensor.shape
+    ), f"Expected shape {input_tensor.shape}, got {output_mq_self.shape}"
 
     output_gq_self = self_attention_gq(input_tensor)
-    assert output_gq_self.shape == input_tensor.shape, f"Expected shape {input_tensor.shape}, got {output_gq_self.shape}"
+    assert (
+        output_gq_self.shape == input_tensor.shape
+    ), f"Expected shape {input_tensor.shape}, got {output_gq_self.shape}"
 
     output_mh_cross = cross_attention_mh(input_tensor, cross_tensor)
-    assert output_mh_cross.shape == input_tensor.shape, f"Expected shape {input_tensor.shape}, got {output_mh_cross.shape}"
+    assert (
+        output_mh_cross.shape == input_tensor.shape
+    ), f"Expected shape {input_tensor.shape}, got {output_mh_cross.shape}"
 
     output_mq_cross = cross_attention_mq(input_tensor, cross_tensor)
-    assert output_mq_cross.shape == input_tensor.shape, f"Expected shape {input_tensor.shape}, got {output_mq_cross.shape}"
+    assert (
+        output_mq_cross.shape == input_tensor.shape
+    ), f"Expected shape {input_tensor.shape}, got {output_mq_cross.shape}"
 
     output_gq_cross = cross_attention_gq(input_tensor, cross_tensor)
-    assert output_gq_cross.shape == input_tensor.shape, f"Expected shape {input_tensor.shape}, got {output_gq_cross.shape}"
+    assert (
+        output_gq_cross.shape == input_tensor.shape
+    ), f"Expected shape {input_tensor.shape}, got {output_gq_cross.shape}"
 
 
 models_with_params = [
@@ -365,17 +384,19 @@ models_with_params = [
     (FFN_GLU, {"in_features": 64, "k_multiplier": 2, "out_features": 128}),
 ]
 
+
 @pytest.mark.parametrize("model_class, params", models_with_params)
 def test_ffn(model_class, params) -> None:
     model = model_class(**params)
-    
-    in_features = params['in_features']
-    x = torch.randn(32, in_features)  
+
+    in_features = params["in_features"]
+    x = torch.randn(32, in_features)
 
     output = model(x)
 
-    out_features = params['out_features']
+    out_features = params["out_features"]
     assert output.shape == (32, out_features)
+
 
 def test_pos() -> None:
     dropout = 0.1
@@ -390,8 +411,9 @@ def test_pos() -> None:
 
     abs_pos_enc = AbsoluteSinusoidalPositionalEncoding(dropout=dropout)
     rot_pos_enc = RotaryPositionalEncoding(d_model=embed_dim, seq_len=seq_length)
-    dn_pos_enc = DnPositionalEncoding(delta_t=delta_t, degree=degree, edge_order=edge_order)
-
+    dn_pos_enc = DnPositionalEncoding(
+        delta_t=delta_t, degree=degree, edge_order=edge_order
+    )
 
     output = rot_pos_enc(input_tensor)
     assert output.shape == input_tensor.shape
@@ -399,6 +421,7 @@ def test_pos() -> None:
     assert output.shape == input_tensor.shape
     output = dn_pos_enc(input_tensor)
     assert output.shape == input_tensor.shape
+
 
 # implementation on c++
 # def test_patch_embedding_3dcnn():
@@ -424,9 +447,9 @@ def test_pos() -> None:
 #     output = patch_embed(input_tensor)
 
 #     assert output.shape == (batch_size, h_div * w_div, d_model)
-    
+
 #     feature_extractor = FeatureExtractor2D()
-    
+
 #     patch_embed = PatchEmbedding2DCNN(d_model=d_model, pe=pe, feature_extractor=feature_extractor, architecture=architecture, hidden_activations=hidden_activations, dropout=dropout)
 
 #     output = patch_embed(input_tensor)
@@ -442,11 +465,11 @@ def test_pos() -> None:
 #     res_layers = 1
 #     shape = (input_size, sequence_length, batch_size)
 #     x = torch.randn(*shape) # batch_size, sequence, input_size
-    
+
 #     model = GRU(input_size, hidden_size, rnn_layers, res_layers)
 #     out = model(x)
 #     assert (out.shape == shape), 'Residual GRU failed'
-    
+
 #     model = LSTM(input_size, hidden_size, rnn_layers, res_layers)
 #     out = model(x)
 #     assert (out.shape == shape), 'Residual LSTM failed'

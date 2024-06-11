@@ -42,13 +42,15 @@ class RotaryPositionalEncoding(nn.Module):
         # embedding size must be even
         assert d_model % 2 == 0, "d_model must be div by 2"
         self.theta_numerator = torch.arange(0, d_model, 2).float()
-        self.theta_j = 1.0 / (theta ** (self.theta_numerator / d_model)) # (Dim / 2)
+        self.theta_j = 1.0 / (theta ** (self.theta_numerator / d_model))  # (Dim / 2)
         # creates absolute position based on seq_len
         self.m_i = torch.arange(seq_len)
         # creates (m_i,theta_j) matrix
         function_inputs = torch.outer(self.m_i, self.theta_j).float()
         # translated into polar
-        self.freqs_complex = torch.polar(torch.ones_like(function_inputs), function_inputs)
+        self.freqs_complex = torch.polar(
+            torch.ones_like(function_inputs), function_inputs
+        )
 
     def forward(self, x) -> Tensor:
         x_complex = torch.view_as_complex(x.float().reshape(*x.shape[:-1], -1, 2))
@@ -85,7 +87,7 @@ class DnPositionalEncoding(nn.Module):
     def forward(self, x_n: Tensor) -> Tensor:
         out = x_n.clone()
         for _ in range(1, self.degree + 1):
-            (x_n, ) = torch.gradient(
+            (x_n,) = torch.gradient(
                 x_n, spacing=(self.delta_t,), dim=-1, edge_order=self.edge_order
             )
             out += x_n

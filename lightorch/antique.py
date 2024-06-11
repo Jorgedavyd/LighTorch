@@ -10,6 +10,7 @@ from tqdm import tqdm
 # REASON: Optimization performance against other libraries (lightning)
 # requires tensorboard installed
 
+
 def create_config(name_run: str):
     os.makedirs(f"./{name_run}/models", exist_ok=True)
     return {
