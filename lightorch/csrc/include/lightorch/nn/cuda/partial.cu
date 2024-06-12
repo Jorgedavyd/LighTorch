@@ -1,0 +1,1 @@
+// Optimized partial implementation
