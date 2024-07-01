@@ -3,11 +3,21 @@
 
 namespace F = torch::nn::functional;
 
-at::Tensor patch_embed_2d () {
+at::Tensor patch_embed_2d_forward () {
+    
+}
+
+at::Tensor patch_embed_2d_backward () {
+    
+}
+
+
+at::Tensor patch_embed_3d_forward () {
 
 }
 
-at::Tensor patch_embed_3d () {
+at::Tensor patch_embed_3d_backward () {
 
 }
+
 
