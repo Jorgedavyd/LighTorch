@@ -103,15 +103,15 @@ class Transformer(nn.Module):
                 x = encoder(x)
                 out = decoder(x)
 
-            x = self.fc(out)
-
         elif self.encoder:
             for encoder in self.encoder:
-                x = encoder(x)
+                out = encoder(x)
 
         else:
             for decoder in self.decoder:
-                x = decoder(x)
+                out = decoder(x)
+
+        x = self.fc(out)
 
         return x
 
@@ -132,11 +132,11 @@ class CrossTransformer(nn.Module):
 
     def _single_forward(
         self,
-        cell_1: Sequence[TransformerCell],
-        cell_2: Sequence[TransformerCell],
+        cell_1:TransformerCell,
+        cell_2:TransformerCell,
         head_1: Tensor,
         head_2: Tensor,
-    ) -> Tensor:
+    ) -> Tuple[Tensor, Tensor]:
         out0 = cell_1.self_attention(head_1)
         out1 = cell_2.self_attention(head_2)
 
@@ -149,8 +149,8 @@ class CrossTransformer(nn.Module):
         return out0, out1
 
     def forward(
-        self, head_1: Sequence, head_2: Sequence
-    ) -> Tuple[Tuple[Tensor], Tuple[Tensor]]:
+        self, head_1: Tensor, head_2: Tensor
+        ) -> Tuple[Tensor, Tensor]:
         for cell_1, cell_2 in zip(self.cell_1, self.cell_2):
             head_1, head_2 = self._single_forward(cell_1, cell_2, head_1, head_2)
 

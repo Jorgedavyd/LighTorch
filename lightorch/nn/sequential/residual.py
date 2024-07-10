@@ -1,11 +1,11 @@
 from torch import nn, Tensor
-from typing import Union, Tuple, Callable, Any, Union
+from typing import Union, Any, Union
 from ..functional import residual_connection
 
 
 class _Residual(nn.Module):
     def __init__(
-        self, module: Union[nn.Module, Callable[[int, int], nn.Module]], n_layers: int
+        self, module: nn.Module, n_layers: int
     ):
         super().__init__()
         self.model = nn.ModuleList([module for _ in range(n_layers)])
