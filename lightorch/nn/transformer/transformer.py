@@ -78,7 +78,9 @@ class Transformer(nn.Module):
         fc: Optional[nn.Module] = None,
         n_layers: int = 1,
     ) -> None:
-        assert (encoder is not None or decoder is not None), "Not valid parameters, must be at least one encoder or decoder."
+        assert (
+            encoder is not None or decoder is not None
+        ), "Not valid parameters, must be at least one encoder or decoder."
         super().__init__()
         self.embedding = embedding_layer
         self.pe = positional_encoding
@@ -133,8 +135,8 @@ class CrossTransformer(nn.Module):
 
     def _single_forward(
         self,
-        cell_1:TransformerCell,
-        cell_2:TransformerCell,
+        cell_1: TransformerCell,
+        cell_2: TransformerCell,
         head_1: Tensor,
         head_2: Tensor,
     ) -> Tuple[Tensor, Tensor]:
@@ -149,9 +151,7 @@ class CrossTransformer(nn.Module):
 
         return out0, out1
 
-    def forward(
-        self, head_1: Tensor, head_2: Tensor
-        ) -> Tuple[Tensor, Tensor]:
+    def forward(self, head_1: Tensor, head_2: Tensor) -> Tuple[Tensor, Tensor]:
         for cell_1, cell_2 in zip(self.cell_1, self.cell_2):
             head_1, head_2 = self._single_forward(cell_1, cell_2, head_1, head_2)
 

@@ -38,15 +38,17 @@ def interval(algo: LRScheduler) -> str:
     else:
         return "epoch"
 
-class Module(LightningModule): 
-    """ 
-    init: triggers: Dict[str, Dict[str, float]] -> This is an interpretative implementation for grouped optimization where the parameters are stored in groups given a "trigger", namely, as trigger parameters you can put a string describing the beginning of the parameters to optimize in a group. 
-    optimizer: str | Optimizer -> Name of the optimizer or an Optimizer instance. 
-    scheduler: str | LRScheduler -> Name of the scheduler or a Scheduler instance. 
-    scheduler_kwargs: Dict[str, Any] -> Arguments of the scheduler. 
-    gradient_clip_algorithm: str -> Gradient clip algorithm [value, norm]. 
-    gradient_clip_val: float -> Clipping value. 
+
+class Module(LightningModule):
     """
+    init: triggers: Dict[str, Dict[str, float]] -> This is an interpretative implementation for grouped optimization where the parameters are stored in groups given a "trigger", namely, as trigger parameters you can put a string describing the beginning of the parameters to optimize in a group.
+    optimizer: str | Optimizer -> Name of the optimizer or an Optimizer instance.
+    scheduler: str | LRScheduler -> Name of the scheduler or a Scheduler instance.
+    scheduler_kwargs: Dict[str, Any] -> Arguments of the scheduler.
+    gradient_clip_algorithm: str -> Gradient clip algorithm [value, norm].
+    gradient_clip_val: float -> Clipping value.
+    """
+
     def __init__(
         self,
         *,
@@ -189,7 +191,9 @@ class Module(LightningModule):
         else:
             return self.scheduler(optimizer)
 
-    def configure_optimizers(self) -> Dict[str, Union[Optimizer, Dict[str, Union[float, int, LRScheduler]]]]:
+    def configure_optimizers(
+        self,
+    ) -> Dict[str, Union[Optimizer, Dict[str, Union[float, int, LRScheduler]]]]:
         optimizer = self._configure_optimizer()
         if self.scheduler is not None:
             scheduler = self._configure_scheduler(optimizer)

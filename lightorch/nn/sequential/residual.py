@@ -4,9 +4,7 @@ from ..functional import residual_connection
 
 
 class _Residual(nn.Module):
-    def __init__(
-        self, module: nn.Module, n_layers: int
-    ):
+    def __init__(self, module: nn.Module, n_layers: int):
         super().__init__()
         self.model = nn.ModuleList([module for _ in range(n_layers)])
 
