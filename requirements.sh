@@ -1,4 +1,5 @@
 #!/bin/bash
+rm -rf requirements.txt
 
 pipreqs lightorch --savepath=requirements.in
 
