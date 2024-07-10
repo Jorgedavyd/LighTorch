@@ -1,4 +1,3 @@
-from .hparams import *
 from .nn import *
 from .training import *
 from ._version import __version__
