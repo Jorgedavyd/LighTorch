@@ -78,6 +78,7 @@ class Transformer(nn.Module):
         fc: Optional[nn.Module] = None,
         n_layers: int = 1,
     ) -> None:
+        assert (encoder is not None or decoder is not None), "Not valid parameters, must be at least one encoder or decoder."
         super().__init__()
         self.embedding = embedding_layer
         self.pe = positional_encoding
@@ -110,8 +111,8 @@ class Transformer(nn.Module):
         else:
             for decoder in self.decoder:
                 out = decoder(x)
-
-        x = self.fc(out)
+        if self.fc:
+            x = self.fc(out)
 
         return x
 
