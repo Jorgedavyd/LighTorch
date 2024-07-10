@@ -1,8 +1,5 @@
 #!/bin/bash
-rm -rf requirements.txt
+rm -f requirements.txt
 
-pipreqs lightorch --savepath=requirements.in
+pipreqs lightorch --force
 
-pip-compile requirements.in 
-
-rm -f requirements.in
