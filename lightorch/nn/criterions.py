@@ -1,5 +1,5 @@
 from torch import nn, Tensor
-from typing import Sequence, Dict, Tuple, Sequence, List, Union
+from typing import Optional, Sequence, Dict, Tuple, Sequence, List, Union
 from . import functional as F
 from itertools import chain
 
@@ -14,11 +14,13 @@ def _merge_dicts(dicts: Sequence[Dict[str, float]]) -> Dict[str, float]:
 class LighTorchLoss(nn.Module):
     def __init__(
         self,
-        labels: Union[Sequence[str], str],
+        labels: Union[List[str], str],
         factors: Union[Dict[str, float], Sequence[Dict[str, float]]],
     ) -> None:
         super().__init__()
-        self.labels = labels
+        if isinstance(labels, str):
+            labels = [labels]
+        self.labels: List[str] = labels
         if "Overall" not in labels:
             self.labels.append("Overall")
         self.factors = factors
@@ -30,36 +32,29 @@ class Loss(LighTorchLoss):
             loss
         ), "Not valid input classes, each should be different."
         super().__init__(
-            list(set([*chain.from_iterable([i.labels for i in loss])])),
-            _merge_dicts([i.factors for i in loss]),
+            labels = list(set([*chain.from_iterable([i.labels for i in loss])])),
+            factors = _merge_dicts([i.factors for i in loss]),
         )
         self.loss = loss
 
     def forward(self, **kwargs) -> Tuple[Tensor, ...]:
         loss_ = Tensor([0.0])
         out_list = []
-
         for loss in self.loss:
             args = loss(**kwargs)
             out_list.extend(list(args[:-1]))
             loss_ += args[-1]
-
         out_list.append(loss_)
-
         out_list = tuple(out_list)
-
         return out_list
 
-
 class MSELoss(nn.MSELoss):
-    def __init__(
-        self, size_average=None, reduce=None, reduction: str = "mean", factor: float = 1
-    ) -> None:
+    def __init__(self, size_average=None, reduce=None, reduction: str = "mean", factor: float = 1) -> None:
         super(MSELoss, self).__init__(size_average, reduce, reduction)
         self.factors = {self.__class__.__name__: factor}
         self.labels = [self.__class__.__name__]
 
-    def forward(self, **kwargs) -> Tensor:
+    def forward(self, **kwargs) -> Tuple[Tensor, Tensor]:
         out = super().forward(kwargs["input"], kwargs["target"])
         return out, out * self.factors[self.__class__.__name__]
 
@@ -81,9 +76,20 @@ class CrossEntropyLoss(nn.CrossEntropyLoss):
         self.factors = {self.__class__.__name__: factor}
         self.labels = [self.__class__.__name__]
 
-    def forward(self, **kwargs) -> Tensor:
+    def forward(self, **kwargs) -> Tuple[Tensor, Tensor]:
         out = super().forward(kwargs["input"], kwargs["target"])
         return out, out * self.factors[self.__class__.__name__]
+
+class BinaryCrossEntropy(nn.BCELoss):
+    def __init__(self, weight: Optional[Tensor] = None, size_average=None, reduce=None, reduction: str = 'mean') -> None:
+        super().__init__(weight, size_average, reduce, reduction)
+        self.factors = {self.__class__.__name__: factor}
+        self.labels = [self.__class__.__name__]
+
+    def forward(self, **kwargs) -> Tuple[Tensor, Tensor]:
+        out = super().forward(kwargs["input"], kwargs["target"])
+        return out, out * self.factors[self.__class__.__name__]
+
 
 
 class ELBO(LighTorchLoss):
@@ -94,9 +100,11 @@ class ELBO(LighTorchLoss):
     """
 
     def __init__(self, beta: float, reconstruction_criterion: LighTorchLoss) -> None:
+        factors = {"KL Divergence": beta}
+        factors.update(reconstruction_criterion.factors)
         super().__init__(
-            ["KL Divergence"] + reconstruction_criterion.labels,
-            {"KL Divergence": beta}.update(reconstruction_criterion.factors),
+            labels = ["KL Divergence"] + reconstruction_criterion.labels,
+            factors = factors
         )
 
         self.L_recons = reconstruction_criterion
@@ -107,9 +115,7 @@ class ELBO(LighTorchLoss):
         input, target, logvar, mu
         """
         *L_recons, L_recons_out = self.L_recons(**kwargs)
-
         L_kl = F.kl_div(kwargs["mu"], kwargs["logvar"])
-
         return (*L_recons, L_kl, L_recons_out + self.beta * L_kl)
 
 
@@ -173,10 +179,6 @@ class PerceptualLoss(LighTorchLoss):
         )
         return out, self.factors[self.__class__.__name__] * out
 
-
-# pnsr
-
-
 class PeakSignalNoiseRatio(LighTorchLoss):
     """
     forward (input, target)
@@ -189,10 +191,6 @@ class PeakSignalNoiseRatio(LighTorchLoss):
     def forward(self, **kwargs) -> Tensor:
         out = F.psnr(kwargs["input"], kwargs["target"], self.max)
         return out, out * self.factors[self.__class__.__name__]
-
-
-# Total variance
-
 
 class TV(LighTorchLoss):
     """
@@ -207,8 +205,6 @@ class TV(LighTorchLoss):
         out = F.total_variance(kwargs["input"])
         return out, out * self.factors[self.__class__.__name__]
 
-
-# lambda
 class LagrangianFunctional(LighTorchLoss):
     """
     Creates a lagrangian function of the form:
@@ -281,7 +277,7 @@ class LagrangianFunctional(LighTorchLoss):
         self.g = g
         self.f = f
 
-    def forward(self, **kwargs) -> Tensor:
+    def forward(self, **kwargs) -> Tuple[Tensor, Tensor]:
         g_out_list: List[float] = []
         g_out_fact: List[float] = []
         for constraint in self.g:

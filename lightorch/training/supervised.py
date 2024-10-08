@@ -1,11 +1,17 @@
 from lightning.pytorch import LightningModule
-from typing import Union, Sequence, Any, Dict, List
+from typing import Optional, Union, Sequence, Any, Dict, List
 from torch import Tensor, nn
-from torch.optim import Optimizer
+from torch.optim.optimizer import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 from collections import defaultdict
 import torch
-from torch.optim import Adam, Adadelta, Adamax, AdamW, SGD, LBFGS, RMSprop
+from torch.optim.adadelta import Adadelta
+from torch.optim.adam import Adam
+from torch.optim.adamax import Adamax
+from torch.optim.adamw import AdamW
+from torch.optim.sgd import SGD
+from torch.optim.lbfgs import LBFGS
+from torch.optim.rmsprop import RMSprop
 
 from torch.optim.lr_scheduler import (
     OneCycleLR,
@@ -53,10 +59,10 @@ class Module(LightningModule):
         self,
         *,
         optimizer: Union[str, Optimizer],
-        scheduler: Union[str, LRScheduler] = None,
-        triggers: Dict[str, Dict[str, float]] = None,
-        optimizer_kwargs: Dict[str, Any] = None,
-        scheduler_kwargs: Dict[str, Any] = None,
+        scheduler: Optional[Union[str, LRScheduler]] = None,
+        triggers: Optional[Dict[str, Dict[str, float]]] = None,
+        optimizer_kwargs: Optional[Dict[str, Any]] = None,
+        scheduler_kwargs: Optional[Dict[str, Any]] = None,
         **kwargs,
     ) -> None:
         super().__init__()
@@ -147,28 +153,29 @@ class Module(LightningModule):
         Given a list of "triggers", the param groups are defined.
         """
         if self.triggers is not None:
-            param_groups: Sequence[Dict[str, List[nn.Module]]] = [
-                defaultdict(list) for _ in range(len(self.triggers))
+            param_groups: Sequence[Dict[str, Union[List[nn.Parameter], float]]] = [
+                defaultdict(list) for _ in self.triggers
             ]
-            # Update the model parameters per group and finally add the
-            # hyperparameters
-            for param_group, trigger in zip(param_groups, self.triggers):
+            for idx, trigger in enumerate(self.triggers):
                 for name, param in self.named_parameters():
                     if name.startswith(trigger):
-                        param_group["params"].append(param)
+                        param_groups[idx]["params"].append(param)
 
-                param_group.update(self.triggers[trigger])
+                param_groups[idx].update(self.triggers[trigger])
 
             return param_groups
-        return None
+        raise TypeError("Triggers are not defined")
 
     def _configure_optimizer(self) -> Optimizer:
-        if params := self.get_param_groups() is not None:
+        params = self.get_param_groups()
+        if params is not None:
             if isinstance(self.optimizer, str):
-                return VALID_OPTIMIZERS[self.optimizer](params)
-            elif isinstance(self.optimizer, torch.optim.Optimizer):
+                if valid:=VALID_OPTIMIZERS.get(self.optimizer, None):
+                    return valid(params)
+                raise TypeError("Not valid optimizer")
+            elif isinstance(self.optimizer, Optimizer):
                 return self.optimizer
-            elif issubclass(self.optimizer, torch.optim.Optimizer):
+            elif issubclass(self.optimizer, Optimizer):
                 return self.optimizer(params)
         else:
 
@@ -182,18 +189,23 @@ class Module(LightningModule):
             return self.optimizer(self.parameters(), **self.optimizer_kwargs)
 
     def _configure_scheduler(self, optimizer: Optimizer) -> LRScheduler:
-        if isinstance(self.scheduler, str):
-            if self.scheduler == "onecycle":
-                self.scheduler_kwargs["total_steps"] = (
-                    self.trainer.estimated_stepping_batches
-                )
-            return VALID_SCHEDULERS[self.scheduler](optimizer, **self.scheduler_kwargs)
-        else:
-            return self.scheduler(optimizer)
+        if self.scheduler is not None:
+            if isinstance(self.scheduler, str):
+                if self.scheduler == "onecycle":
+                    if self.scheduler_kwargs is not None:
+                        self.scheduler_kwargs["total_steps"] = (
+                            self.trainer.estimated_stepping_batches
+                        )
+                    else:
+                        raise ValueError(f'Scheduler kwargs not defined for {self.scheduler}')
+                if self.scheduler_kwargs is not None:
+                    return VALID_SCHEDULERS[self.scheduler](optimizer, **self.scheduler_kwargs)
+            else:
+                return self.scheduler(optimizer)
 
     def configure_optimizers(
         self,
-    ) -> Dict[str, Union[Optimizer, Dict[str, Union[float, int, LRScheduler]]]]:
+    ) -> Dict[str, Union[Optimizer, Dict[str, Union[str, int, LRScheduler]]]]:
         optimizer = self._configure_optimizer()
         if self.scheduler is not None:
             scheduler = self._configure_scheduler(optimizer)
