@@ -170,7 +170,7 @@ class Module(LightningModule):
         params = self.get_param_groups()
         if params is not None:
             if isinstance(self.optimizer, str):
-                if valid:=VALID_OPTIMIZERS.get(self.optimizer, None):
+                if valid := VALID_OPTIMIZERS.get(self.optimizer, None):
                     return valid(params)
                 raise TypeError("Not valid optimizer")
             elif isinstance(self.optimizer, Optimizer):
@@ -197,9 +197,13 @@ class Module(LightningModule):
                             self.trainer.estimated_stepping_batches
                         )
                     else:
-                        raise ValueError(f'Scheduler kwargs not defined for {self.scheduler}')
+                        raise ValueError(
+                            f"Scheduler kwargs not defined for {self.scheduler}"
+                        )
                 if self.scheduler_kwargs is not None:
-                    return VALID_SCHEDULERS[self.scheduler](optimizer, **self.scheduler_kwargs)
+                    return VALID_SCHEDULERS[self.scheduler](
+                        optimizer, **self.scheduler_kwargs
+                    )
             else:
                 return self.scheduler(optimizer)
 
